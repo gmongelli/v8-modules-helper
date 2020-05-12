@@ -22,14 +22,54 @@
 
 <template:addResources type="javascript" resources="spinner.js"/>
 <template:addResources type="css" resources="style.css"/>
-
 <%
     request.setAttribute("licenseId",org.jahia.modules.v8moduleshelper.utils.LicenseUtils.getLicenseId());
 %>
 <div class="box-1">
-    <p class="serverId"><b>Server id:</b> ${licenseId}</p>
-    <p class="serverId"><a href="https://id.jahia.com/licenses?licenseId=${licenseId}&licenseVersion=8.0.0.0">To get free or dev V8 license</a></p>
-    <p class="serverId"><a href="https://support.jahia.com/secure/Dashboard.jspa">To contact support for production license</a></p>
+    <p class="serverId"><b>Jahia 8 license key</b></p>
+    <p class="serverId">A new license key is required to run Jahia 8.</p>
+    <ul id="actionList">
+        <li class="serverId">You can use <a href="https://id.jahia.com/licenses?licenseId=${licenseId}&licenseVersion=8.0.0.0">this
+            form</a>,
+            to instantaneously receive a new and free license key for a standalone environment. This free license key
+            comes
+            with some limitations.
+        </li>
+        <li class="serverId"> Current Jahia customers shall open a ticket in their <a
+                href="https://support.jahia.com/secure/Dashboard.jspa">Jahia
+            support space</a>
+            to request a license key for production/cluster environment.
+        </li>
+    </ul>
+    <p class="serverId">In both cases, you will need to provide the following server ID when requesting your Jahia 8 license key:</p>
+    <p class="serverId"><b>Server ID:</b> ${licenseId}</p>
+    <button id="copy">Copy <b>Server ID</b> to clipboard</button>
+    <p class="serverId"><i>Note: All the nodes of a Jahia cluster share the same server ID</i></p>
+    <script>
+        function copy() {
+            if (window.clipboardData && window.clipboardData.setData) {
+                return window.clipboardData.setData("Text", '${licenseId}');
+            }
+            else if (document.queryCommandSupported && document.queryCommandSupported("copy")) {
+                var textarea = document.createElement("textarea");
+                textarea.textContent = '${licenseId}';
+                textarea.style.position = "fixed";  // Prevent scrolling to bottom of page in Microsoft Edge.
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    return document.execCommand("copy");  // Security exception may be thrown by some browsers.
+                }
+                catch (ex) {
+                    console.warn("Copy to clipboard failed.", ex);
+                    return false;
+                }
+                finally {
+                    document.body.removeChild(textarea);
+                }
+            }
+        }
+        document.getElementById('copy').addEventListener('click', copy);
+    </script>
 </div>
 <div class="box-1">
     <form:form id="form1" modelAttribute="environmentInfo" method="post">

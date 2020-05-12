@@ -1,4 +1,4 @@
-.loading-spinner span{
+.loading-spinner span {
     background-position: right;
     background-repeat: no-repeat;
     background-image: url(images/loading.gif);
@@ -9,7 +9,7 @@
     font-weight: bold;
 }
 
-.loading-spinner{
+.loading-spinner {
     display: none;
 }
 
@@ -17,7 +17,19 @@ a {
     text-decoration: underline;
 }
 
-.serverId {
-    margin: 15px;
+#actionList {
+    margin: 20px;
     font-size: medium;
+}
+
+#copy {
+    font-size: medium;
+    margin: 10px;
+    display: inline-block;
+}
+
+.serverId {
+    margin: 10px;
+    font-size: medium;
+    line-height: 1.6;
 }
