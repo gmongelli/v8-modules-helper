@@ -5,7 +5,29 @@
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <%@ taglib prefix="template" uri="http://www.jahia.org/tags/templateLib" %>
 
+<c:if test="${environmentInfo.srcStartedOnly == 'true'
+            || environmentInfo.srcRemoveStore == 'true'
+            || environmentInfo.srcRemoveJahia == 'true'}">
+    <div class="box-1">
+        <h1>Selected Options</h1>
+
+        <c:if test="${environmentInfo.srcStartedOnly == 'true'}">
+            <span> <fmt:message
+                    key="lbl.srcStartedOnly"></fmt:message></span>
+        </c:if>
+        <c:if test="${environmentInfo.srcRemoveStore == 'true'}">
+            <br><span> <fmt:message
+                    key="lbl.srcRemoveStore"></fmt:message></span>
+        </c:if>
+        <c:if test="${environmentInfo.srcRemoveJahia == 'true'}">
+            <br><span> <fmt:message
+                    key="lbl.srcRemoveJahia"></fmt:message></span>
+        </c:if>
+    </div>
+</c:if>
+
 <div class="box-1">
+
     <h1>Modules Report</h1>
 
     <table class="table table-striped">
