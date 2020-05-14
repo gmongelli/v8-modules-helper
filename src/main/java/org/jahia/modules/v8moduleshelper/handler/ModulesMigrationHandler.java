@@ -20,7 +20,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.binding.message.MessageBuilder;
@@ -41,6 +40,13 @@ public class ModulesMigrationHandler {
 
     private static final String JAHIA_STORE_URL =
             "https://store.jahia.com/en/sites/private-app-store/contents/modules-repository.moduleList.json";
+
+    private static final String SITE_SELECT =
+            "SELECT * FROM [jnt:template] As template WHERE template.[j:view] = 'siteSettings' AND";
+    private static final String SERVER_SELECT =
+            "SELECT * FROM [jnt:template] As template WHERE template.[j:view] = 'serverSettings' AND";
+    private static final String CONTRIBUTE_MODE_SELECT =
+            "SELECT * FROM [jmix:contributeMode] As template WHERE";
 
     private static final Logger logger = LoggerFactory.getLogger(ModulesMigrationHandler.class);
     private List<ResultMessage> resultReport = new ArrayList<>();
@@ -107,13 +113,51 @@ public class ModulesMigrationHandler {
     }
 
     /**
+     * Collects data from JCR
+     *
+     * @param querySelect JCR Query
+     * @param moduleName Module name
+     * @param moduleVersion Module Version
+     * @return Modules list
+     */
+    private List<String> getModuleListByQuery(String querySelect, String moduleName, String moduleVersion) {
+        List<String> modulesPathList = new ArrayList<String>();
+
+        String modulePath = String.format(" ISDESCENDANTNODE (template, '/modules/%s/%s/templates/')",
+                moduleName, moduleVersion.replace(".SNAPSHOT", "-SNAPSHOT"));
+
+        try {
+            JCRSessionWrapper jcrNodeWrapper = JCRSessionFactory.getInstance()
+                    .getCurrentSystemSession(Constants.EDIT_WORKSPACE, null, null);
+
+            NodeIterator iterator = jcrNodeWrapper.getWorkspace().getQueryManager()
+                    .createQuery(querySelect + modulePath, Query.JCR_SQL2).execute().getNodes();
+            if (iterator.hasNext()) {
+                final JCRNodeWrapper node = (JCRNodeWrapper) iterator.nextNode();
+                modulesPathList.add(node.getPath());
+            }
+
+        } catch (RepositoryException e) {
+            logger.error(String.format("Cannot get JCR information from module %s/%s",
+                    moduleName, moduleVersion));
+            logger.error(e.toString());
+        }
+
+        return modulesPathList;
+    }
+
+    /**
      * Build a report for local modules
      *
      * @param onlyStartedModules Indicates if only started modules will be returned
      * @param removeJahiaStore Remove Jahia Store modules from report
+     * @param isSrcAddSystemModules Add System Modules to the report results
      * @param removeJahiaGithub Remove Modules from Jahia organization on Github
      */
-    private void buildReportLocalModules(boolean onlyStartedModules, boolean removeJahiaStore, boolean removeJahiaGithub) {
+    private void buildReportLocalModules(boolean onlyStartedModules,
+                                         boolean removeJahiaStore,
+                                         boolean isSrcAddSystemModules,
+                                         boolean removeJahiaGithub) {
 
         Map<Bundle, JahiaTemplatesPackage> installedModules = ServicesRegistry.getInstance()
                 .getJahiaTemplateManagerService().getRegisteredBundles();
@@ -129,7 +173,9 @@ public class ModulesMigrationHandler {
             String modulescmURI = localJahiaBundle.getScmURI();
             String moduleType = localJahiaBundle.getModuleType();
 
-            if (moduleType.equalsIgnoreCase("module") == false) {
+            if ((moduleType.equalsIgnoreCase("module") == false
+                    && moduleType.equalsIgnoreCase("system") == false)
+                    || (moduleType.equalsIgnoreCase("module") == false && isSrcAddSystemModules == false)) {
                 continue;
             }
 
@@ -145,11 +191,12 @@ public class ModulesMigrationHandler {
                 continue;
             }
 
-            List<String> nodeTypesWithLegacyJmix = new ArrayList<String>();
-            List<String> siteSettingsPaths = new ArrayList<String>();
-            List<String> serverSettingsPaths = new ArrayList<String>();
-            List<String> nodeTypesWithDate = new ArrayList<String>();
             boolean hasSpringBean = false;
+            List<String> nodeTypesWithLegacyJmix = new ArrayList<String>();
+            List<String> nodeTypesWithDate = new ArrayList<String>();
+            List<String> siteSettingsPaths = getModuleListByQuery(SITE_SELECT, moduleName, moduleVersion);
+            List<String> serverSettingsPaths = getModuleListByQuery(SERVER_SELECT, moduleName, moduleVersion);
+            List<String> contributeModePaths = getModuleListByQuery(CONTRIBUTE_MODE_SELECT, moduleName, moduleVersion);
 
             /* Node types checker for jmix and Data format usage */
             NodeTypeRegistry.JahiaNodeTypeIterator it = NodeTypeRegistry.getInstance().getNodeTypes(moduleName);
@@ -183,52 +230,6 @@ public class ModulesMigrationHandler {
                 }
             }
 
-            String modulePath = String.format("AND ISDESCENDANTNODE (template, '/modules/%s/%s/')",
-                    moduleName, moduleVersion.replace(".SNAPSHOT", "-SNAPSHOT"));
-
-            final String siteSelect =
-                    "SELECT * FROM [jnt:template] As template WHERE template.[j:view] = 'siteSettings' ";
-            final String serverSelect =
-                    "SELECT * FROM [jnt:template] As template WHERE template.[j:view] = 'serverSettings' ";
-
-            /* Check for modules with siteSettings view */
-            try {
-                JCRSessionWrapper jcrNodeWrapper = JCRSessionFactory.getInstance()
-                        .getCurrentSystemSession(Constants.EDIT_WORKSPACE, null, null);
-
-                NodeIterator iterator = jcrNodeWrapper.getWorkspace().getQueryManager()
-                        .createQuery(siteSelect + modulePath, Query.JCR_SQL2).execute().getNodes();
-                if (iterator.hasNext()) {
-                    final JCRNodeWrapper node = (JCRNodeWrapper) iterator.nextNode();
-                    siteSettingsPaths.add(node.getPath());
-                }
-
-            } catch (RepositoryException e) {
-                logger.error(String.format("Cannot get JCR information from module %s/%s",
-                        moduleName, moduleVersion));
-                logger.error(e.toString());
-                siteSettingsPaths.add("JCR Error");
-            }
-
-            /* Check for modules with serverSettings view */
-            try {
-                JCRSessionWrapper jcrNodeWrapper = JCRSessionFactory.getInstance()
-                        .getCurrentSystemSession(Constants.EDIT_WORKSPACE, null, null);
-
-                NodeIterator iterator = jcrNodeWrapper.getWorkspace().getQueryManager()
-                        .createQuery(serverSelect + modulePath, Query.JCR_SQL2).execute().getNodes();
-                if (iterator.hasNext()) {
-                    final JCRNodeWrapper node = (JCRNodeWrapper) iterator.nextNode();
-                    serverSettingsPaths.add(node.getPath());
-                }
-
-            } catch (RepositoryException e) {
-                logger.error(String.format("Cannot get JCR information from module %s/%s",
-                        moduleName, moduleVersion));
-                logger.error(e.toString());
-                serverSettingsPaths.add("JCR Error");
-            }
-
             /* Check for Spring usage in module context */
             AbstractApplicationContext bundleContext = localJahiaBundle.getContext();
             if (bundleContext != null) {
@@ -244,25 +245,27 @@ public class ModulesMigrationHandler {
                 }
             }
 
-            logger.info(String.format("moduleName=%s moduleVersion=%s moduleGroupId=%s "
+            logger.info(String.format("moduleName=%s moduleVersion=%s org.jahia.modules=%s "
                             + "nodeTypesMixin=%s serverSettingsPaths=%s siteSettingsPaths=%s "
-                            + "nodeTypesDate=%s useSpring=%s",
+                            + "nodeTypesDate=%s contributeModePaths=%s useSpring=%s",
                     moduleName,
                     moduleVersion,
-                    moduleGroupId,
+                    moduleGroupId.equalsIgnoreCase("org.jahia.modules"),
                     nodeTypesWithLegacyJmix.toString(),
                     serverSettingsPaths.toString(),
                     siteSettingsPaths.toString(),
                     nodeTypesWithDate.toString(),
+                    contributeModePaths.toString(),
                     hasSpringBean));
 
             ResultMessage resultMessage = new ResultMessage(moduleName,
                     moduleVersion,
-                    moduleGroupId,
+                    moduleGroupId.equalsIgnoreCase("org.jahia.modules"),
                     nodeTypesWithLegacyJmix.toString(),
                     serverSettingsPaths.toString(),
                     siteSettingsPaths.toString(),
                     nodeTypesWithDate.toString(),
+                    contributeModePaths.toString(),
                     hasSpringBean);
 
             this.resultReport.add(resultMessage);
@@ -289,6 +292,7 @@ public class ModulesMigrationHandler {
         loadStoreJahiaModules();
         buildReportLocalModules(environmentInfo.isSrcStartedOnly(),
                 environmentInfo.isSrcRemoveStore(),
+                environmentInfo.isSrcAddSystemModules(),
                 environmentInfo.isSrcRemoveJahia());
 
         if (this.errorMessage.length() > 0) {

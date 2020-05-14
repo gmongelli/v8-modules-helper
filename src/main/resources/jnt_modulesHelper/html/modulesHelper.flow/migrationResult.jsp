@@ -7,6 +7,7 @@
 
 <c:if test="${environmentInfo.srcStartedOnly == 'true'
             || environmentInfo.srcRemoveStore == 'true'
+            || environmentInfo.srcAddSystemModules == 'true'
             || environmentInfo.srcRemoveJahia == 'true'}">
     <div class="box-1">
         <h1>Selected Options</h1>
@@ -23,6 +24,10 @@
             <br><span> <fmt:message
                     key="lbl.srcRemoveJahia"></fmt:message></span>
         </c:if>
+        <c:if test="${environmentInfo.srcAddSystemModules == 'true'}">
+            <br><span> <fmt:message
+                key="lbl.srcAddSystemModules"></fmt:message></span>
+        </c:if>
     </div>
 </c:if>
 
@@ -34,21 +39,23 @@
         <thead>
         <tr>
             <th>Name</th>
-            <th>Group ID</th>
-            <th>jmix:cmContentTreeDisplayable</th>
+            <th>org.jahia.modules</th>
+            <th>cmContentTreeDisplayable</th>
             <th>serverSettings</th>
             <th>siteSettings</th>
-            <th>Date format</th>
+            <th>contributeMode</th>
+            <th>DateFormat</th>
             <th>Spring</th>
         </tr>
         </thead>
         <c:forEach items="${migrationReport}" var="module">
             <tr>
                 <td>${module.moduleName}/${module.moduleVersion}</td>
-                <td>${module.moduleGroupId}</td>
+                <td>${module.jahiaGroup}</td>
                 <td>${module.nodeTypes}</td>
                 <td>${module.serverSettings}</td>
                 <td>${module.siteSettings}</td>
+                <td>${module.contributeMode}</td>
                 <td>${module.nodeTypesDate}</td>
                 <td>${module.hasSpringBean}</td>
             </tr>

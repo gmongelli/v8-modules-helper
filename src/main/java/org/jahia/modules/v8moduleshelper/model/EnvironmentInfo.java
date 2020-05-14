@@ -11,6 +11,7 @@ public class EnvironmentInfo implements Serializable {
     private boolean srcRemoveStore;
     private boolean srcStartedOnly;
     private boolean srcRemoveJahia;
+    private boolean srcAddSystemModules;
 
     public boolean isSrcRemoveStore() {
         return srcRemoveStore;
@@ -35,4 +36,9 @@ public class EnvironmentInfo implements Serializable {
     public void setSrcRemoveJahia(boolean srcRemoveJahia) {
         this.srcRemoveJahia = srcRemoveJahia;
     }
+
+    public boolean isSrcAddSystemModules() { return srcAddSystemModules; }
+
+    public void setSrcAddSystemModules(boolean srcAddSystemModules) { this.srcAddSystemModules = srcAddSystemModules; }
+
 }

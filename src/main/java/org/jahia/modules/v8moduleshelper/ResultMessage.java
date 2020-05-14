@@ -6,11 +6,12 @@ public class ResultMessage implements Serializable {
 
     String moduleName;
     String moduleVersion;
-    String moduleGroupId;
+    boolean jahiaGroup;
     String nodeTypesMixin;
     String serverSettings;
     String siteSettings;
     String nodeTypesDate;
+    String contributeMode;
     boolean hasSpringBean;
 
     private static final long serialVersionUID = -6552128415414065542L;
@@ -20,19 +21,21 @@ public class ResultMessage implements Serializable {
      */
     public ResultMessage(String moduleName,
                          String moduleVersion,
-                         String moduleGroupId,
+                         boolean jahiaGroup,
                          String nodeTypesMixin,
                          String serverSettings,
                          String siteSettings,
                          String nodeTypesDate,
+                         String contributeMode,
                          boolean hasSpringBean) {
         this.moduleName = moduleName;
         this.moduleVersion = moduleVersion;
-        this.moduleGroupId = moduleGroupId;
+        this.jahiaGroup = jahiaGroup;
         this.nodeTypesMixin = nodeTypesMixin;
         this.serverSettings = serverSettings;
         this.siteSettings = siteSettings;
         this.nodeTypesDate = nodeTypesDate;
+        this.contributeMode = contributeMode;
         this.hasSpringBean = hasSpringBean;
     }
     public String getNodeTypesDate() { return nodeTypesDate; }
@@ -53,14 +56,6 @@ public class ResultMessage implements Serializable {
 
     public void setModuleVersion(String moduleVersion) {
         this.moduleVersion = moduleVersion;
-    }
-
-    public String getModuleGroupId() {
-        return moduleGroupId;
-    }
-
-    public void setModuleGroupId(String moduleGroupId) {
-        this.moduleGroupId = moduleGroupId;
     }
 
     public String getNodeTypes() {
@@ -87,6 +82,10 @@ public class ResultMessage implements Serializable {
         this.siteSettings = siteSettings;
     }
 
+    public String getContributeMode() { return contributeMode; }
+
+    public void setContributeMode(String contributeMode) { this.contributeMode = contributeMode; }
+
     public boolean isHasSpringBean() {
         return hasSpringBean;
     }
@@ -94,4 +93,8 @@ public class ResultMessage implements Serializable {
     public void setHasSpringBean(boolean hasSpringBean) {
         this.hasSpringBean = hasSpringBean;
     }
+
+    public boolean isJahiaGroup() { return jahiaGroup; }
+
+    public void setJahiaGroup(boolean jahiaGroup) { this.jahiaGroup = jahiaGroup; }
 }

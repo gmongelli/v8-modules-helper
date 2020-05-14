@@ -112,9 +112,20 @@
                 <div class="row-fluid">
                     <div class="span4">
                         <form:checkbox class="form-control" path="srcRemoveJahia" name="srcRemoveJahia"
-                                       id="srcNonJahiaOnly" value="${environmentInfo.srcRemoveJahia}"/>
+                                       id="srcRemoveJahia" value="${environmentInfo.srcRemoveJahia}"/>
                         <span> <fmt:message
                                 key="lbl.srcRemoveJahia"></fmt:message></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="container-fluid">
+                <div class="row-fluid">
+                    <div class="span4">
+                        <form:checkbox class="form-control" path="srcAddSystemModules" name="srcAddSystemModules"
+                                       id="srcAddSystemModules" value="${environmentInfo.srcAddSystemModules}"/>
+                        <span> <fmt:message
+                                key="lbl.srcAddSystemModules"></fmt:message></span>
                     </div>
                 </div>
             </div>
