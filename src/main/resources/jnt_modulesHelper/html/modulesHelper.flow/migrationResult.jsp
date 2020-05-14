@@ -5,6 +5,37 @@
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <%@ taglib prefix="template" uri="http://www.jahia.org/tags/templateLib" %>
 
+<script type="text/javascript">
+    function downloadCSV(csv, filename) {
+        var csvFile;
+        var downloadLink;
+
+        csvFile = new Blob([csv], {type: "text/csv"});
+        downloadLink = document.createElement("a");
+        downloadLink.download = filename;
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+        downloadLink.style.display = "none";
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+    }
+
+    function exportTableToCSV(filename) {
+        var csv = [];
+        var rows = document.querySelectorAll("table tr");
+
+        for (var i = 0; i < rows.length; i++) {
+            var row = [], cols = rows[i].querySelectorAll("td, th");
+
+            for (var j = 0; j < cols.length; j++)
+                row.push(cols[j].innerText);
+
+            csv.push(row.join(","));
+        }
+
+        downloadCSV(csv.join("\n"), filename);
+    }
+</script>
+
 <c:if test="${environmentInfo.srcStartedOnly == 'true'
             || environmentInfo.srcRemoveStore == 'true'
             || environmentInfo.srcAddSystemModules == 'true'
@@ -18,11 +49,11 @@
         </c:if>
         <c:if test="${environmentInfo.srcRemoveStore == 'true'}">
             <br><span> <fmt:message
-                    key="lbl.srcRemoveStore"></fmt:message></span>
+                key="lbl.srcRemoveStore"></fmt:message></span>
         </c:if>
         <c:if test="${environmentInfo.srcRemoveJahia == 'true'}">
             <br><span> <fmt:message
-                    key="lbl.srcRemoveJahia"></fmt:message></span>
+                key="lbl.srcRemoveJahia"></fmt:message></span>
         </c:if>
         <c:if test="${environmentInfo.srcAddSystemModules == 'true'}">
             <br><span> <fmt:message
@@ -34,6 +65,18 @@
 <div class="box-1">
 
     <h1>Modules Report</h1>
+
+    <form:form modelAttribute="environmentInfo" class="form-horizontal" method="post">
+
+        <button id="previous" class="btn btn-primary" type="submit" name="_eventId_previous">
+            Back
+        </button>
+        <button id="export" class="btn btn-primary" type="submit" name="_eventId_export"
+                onclick="exportTableToCSV('members.csv')">Export Report to CSV
+        </button>
+    </form:form>
+
+    <c:set var="redirectUrl" value="${renderContext.mainResource.node.path}.html" scope="session"/>
 
     <table class="table table-striped">
         <thead>
@@ -62,38 +105,29 @@
         </c:forEach>
     </table>
 
-    <form:form modelAttribute="environmentInfo" class="form-horizontal" method="post">
-
-        <button id="previous" class="btn btn-primary" type="submit" name="_eventId_previous">
-            Back
-        </button>
-    </form:form>
-
-    <c:set var="redirectUrl" value="${renderContext.mainResource.node.path}.html" scope="session" />
-
 </div>
 
 
 <div class="box-1">
     <h2>Functional Administrators</h2>
-    <fmt:message key="link.functionalAdmin" var="linkFunctionalAdmin" />
+    <fmt:message key="link.functionalAdmin" var="linkFunctionalAdmin"/>
     <p><a href="${linkFunctionalAdmin}">Migration Guide</a></p>
 </div>
 
 <div class="box-1">
     <h2>System Administrators</h2>
-    <fmt:message key="link.systemAdmin" var="linkSystemAdmin" />
+    <fmt:message key="link.systemAdmin" var="linkSystemAdmin"/>
     <p><a href="${linkSystemAdmin}">Migration Guide</a></p>
 </div>
 
 <div class="box-1">
     <h2>Developers</h2>
-    <fmt:message key="link.developers" var="linkDevelopers" />
+    <fmt:message key="link.developers" var="linkDevelopers"/>
     <p><a href="${linkDevelopers}">Migration Guide</a></p>
 </div>
 
 <div class="box-1">
     <h2>Known Issues</h2>
-    <fmt:message key="link.knownIssues" var="linkKnownIssues" />
+    <fmt:message key="link.knownIssues" var="linkKnownIssues"/>
     <p><a href="${linkKnownIssues}">Documentation</a></p>
 </div>

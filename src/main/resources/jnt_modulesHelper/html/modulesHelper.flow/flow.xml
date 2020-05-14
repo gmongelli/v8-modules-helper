@@ -21,6 +21,7 @@
 
     <view-state id="migrationResult">
         <transition on="previous" to="environmentInfo" bind="false" validate="false"></transition>
+        <transition on="export" to="migrationResult" bind="false" validate="false"></transition>
     </view-state>
 
 </flow>
