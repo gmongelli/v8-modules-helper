@@ -59,9 +59,9 @@
   <name>v8-modules-helper</name>
   <description>A module to help adjusting custom modules to Jahia V8</description>
   <scm>
-    <connection>scm:git:git@github.com/Jahia/v8-modules-helper.git</connection>
-    <developerConnection>scm:git:git@github.com/Jahia/v8-modules-helper.git</developerConnection>
-    <url>scm:git:git@github.com/Jahia/v8-modules-helper.git</url>
+    <connection>scm:git:git@github.com:Jahia/v8-modules-helper.git</connection>
+    <developerConnection>scm:git:git@github.com:Jahia/v8-modules-helper.git</developerConnection>
+    <url>https://github.com/Jahia/v8-modules-helper.git</url>
   </scm>
   <properties>
     <jahia-depends>default,serverSettings</jahia-depends>

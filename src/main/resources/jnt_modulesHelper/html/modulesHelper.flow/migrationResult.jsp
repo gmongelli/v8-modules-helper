@@ -34,7 +34,6 @@
         <thead>
         <tr>
             <th>Name</th>
-            <th>Version</th>
             <th>Group ID</th>
             <th>jmix:cmContentTreeDisplayable</th>
             <th>serverSettings</th>
@@ -45,8 +44,7 @@
         </thead>
         <c:forEach items="${migrationReport}" var="module">
             <tr>
-                <td>${module.moduleName}</td>
-                <td>${module.moduleVersion}</td>
+                <td>${module.moduleName}/${module.moduleVersion}</td>
                 <td>${module.moduleGroupId}</td>
                 <td>${module.nodeTypes}</td>
                 <td>${module.serverSettings}</td>
