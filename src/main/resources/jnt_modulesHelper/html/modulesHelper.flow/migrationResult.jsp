@@ -83,7 +83,7 @@
         <tr>
             <th>Name</th>
             <th>org.jahia.modules</th>
-            <th>cmContentTreeDisplayable</th>
+            <th>jmix:cmContentTreeDisplayable</th>
             <th>serverSettings</th>
             <th>siteSettings</th>
             <th>contributeMode</th>

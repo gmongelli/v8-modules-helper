@@ -16,10 +16,10 @@ import org.jahia.services.content.nodetypes.ExtendedNodeType;
 import org.jahia.services.content.nodetypes.ExtendedPropertyDefinition;
 import org.jahia.services.content.nodetypes.NodeTypeRegistry;
 import org.jahia.services.notification.HttpClientService;
+import org.jahia.services.templates.JahiaTemplateManagerService;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.osgi.framework.Bundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.binding.message.MessageBuilder;
@@ -53,6 +53,11 @@ public class ModulesMigrationHandler {
     private StringBuilder errorMessage = new StringBuilder();
     private HttpClientService httpClientService;
     private List<String> jahiaStoreModules = new ArrayList<>();
+
+    private static boolean removeStore = false;
+    private static boolean removeJahiaGit = false;
+    private static boolean onlyStarted = false;
+    private static boolean addSystem = false;
 
     private void initClient() {
         HttpClientParams params = new HttpClientParams();
@@ -147,129 +152,138 @@ public class ModulesMigrationHandler {
     }
 
     /**
-     * Build a report for local modules
+     * Return a list of nodeTypes having a specific jmix as supertype
      *
-     * @param onlyStartedModules Indicates if only started modules will be returned
-     * @param removeJahiaStore Remove Jahia Store modules from report
-     * @param isSrcAddSystemModules Add System Modules to the report results
-     * @param removeJahiaGithub Remove Modules from Jahia organization on Github
+     * @param nodeTypeIterator Node type iterator for a specific module
+     * @param jmix jMix name
+     * @return Modules list
      */
-    private void buildReportLocalModules(boolean onlyStartedModules,
-                                         boolean removeJahiaStore,
-                                         boolean isSrcAddSystemModules,
-                                         boolean removeJahiaGithub) {
+    private List<String> getNodeTypesWithJmix(NodeTypeRegistry.JahiaNodeTypeIterator nodeTypeIterator, String jmix) {
+        List<String> nodeTypeList = new ArrayList<String>();
 
-        Map<Bundle, JahiaTemplatesPackage> installedModules = ServicesRegistry.getInstance()
-                .getJahiaTemplateManagerService().getRegisteredBundles();
+        for (ExtendedNodeType moduleNodeType : nodeTypeIterator) {
+            String nodeTypeName = moduleNodeType.getName();
+            String[] declaredSupertypeNamesList = moduleNodeType.getDeclaredSupertypeNames();
+            for (String supertypeName : declaredSupertypeNamesList) {
 
-        for (Map.Entry<Bundle, JahiaTemplatesPackage> module : installedModules.entrySet()) {
-
-            JahiaTemplatesPackage localJahiaBundle = module.getValue();
-
-            String moduleName = localJahiaBundle.getId();
-            String moduleState = localJahiaBundle.getState().toString();
-            String moduleVersion = module.getKey().getVersion().toString();
-            String moduleGroupId = localJahiaBundle.getGroupId();
-            String modulescmURI = localJahiaBundle.getScmURI();
-            String moduleType = localJahiaBundle.getModuleType();
-
-            if ((moduleType.equalsIgnoreCase("module") == false
-                    && moduleType.equalsIgnoreCase("system") == false)
-                    || (moduleType.equalsIgnoreCase("module") == false && isSrcAddSystemModules == false)) {
-                continue;
-            }
-
-            if (onlyStartedModules == true && moduleState.equalsIgnoreCase("started") == false) {
-                continue;
-            }
-
-            if (removeJahiaStore == true && jahiaStoreModules.contains(moduleName.toLowerCase())) {
-                continue;
-            }
-
-            if (removeJahiaGithub == true && modulescmURI.toLowerCase().contains("scm:git:git@github.com:jahia/")) {
-                continue;
-            }
-
-            boolean hasSpringBean = false;
-            List<String> nodeTypesWithLegacyJmix = new ArrayList<String>();
-            List<String> nodeTypesWithDate = new ArrayList<String>();
-            List<String> siteSettingsPaths = getModuleListByQuery(SITE_SELECT, moduleName, moduleVersion);
-            List<String> serverSettingsPaths = getModuleListByQuery(SERVER_SELECT, moduleName, moduleVersion);
-            List<String> contributeModePaths = getModuleListByQuery(CONTRIBUTE_MODE_SELECT, moduleName, moduleVersion);
-
-            /* Node types checker for jmix and Data format usage */
-            NodeTypeRegistry.JahiaNodeTypeIterator it = NodeTypeRegistry.getInstance().getNodeTypes(moduleName);
-            for (ExtendedNodeType moduleNodeType : it) {
-                String nodeTypeName = moduleNodeType.getName();
-                String[] declaredSupertypeNamesList = moduleNodeType.getDeclaredSupertypeNames();
-
-                ExtendedPropertyDefinition[] allPropertyDefinitions = moduleNodeType.getPropertyDefinitions();
-
-                for (ExtendedPropertyDefinition propertyDefinition : allPropertyDefinitions) {
-                    String formatValue = propertyDefinition.getSelectorOptions().get("format");
-
-                    if (formatValue != null) {
-                        try {
-                            SimpleDateFormat temp = new SimpleDateFormat(formatValue);
-
-                            if (nodeTypesWithDate.contains(nodeTypeName) == false) {
-                                nodeTypesWithDate.add(nodeTypeName);
-                            }
-                        } catch (Exception e) {
-                            logger.debug(String.format("Pattern %s is not a Date", formatValue));
-                        }
-                    }
-                }
-
-                for (String supertypeName : declaredSupertypeNamesList) {
-
-                    if (supertypeName.trim().equals("jmix:cmContentTreeDisplayable")) {
-                        nodeTypesWithLegacyJmix.add(nodeTypeName);
-                    }
+                if (supertypeName.trim().equals(jmix)) {
+                    nodeTypeList.add(nodeTypeName);
                 }
             }
-
-            /* Check for Spring usage in module context */
-            AbstractApplicationContext bundleContext = localJahiaBundle.getContext();
-            if (bundleContext != null) {
-                if (bundleContext.getDisplayName() != null) {
-                    String[] beanDefinitionNames = bundleContext.getBeanDefinitionNames();
-
-                    for (String beanDefinitionName : beanDefinitionNames) {
-                        if (beanDefinitionName.contains("springframework")) {
-                            hasSpringBean = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            logger.info(String.format("moduleName=%s moduleVersion=%s org.jahia.modules=%s "
-                            + "nodeTypesMixin=%s serverSettingsPaths=%s siteSettingsPaths=%s "
-                            + "nodeTypesDate=%s contributeModePaths=%s useSpring=%s",
-                    moduleName,
-                    moduleVersion,
-                    moduleGroupId.equalsIgnoreCase("org.jahia.modules"),
-                    nodeTypesWithLegacyJmix.toString(),
-                    serverSettingsPaths.toString(),
-                    siteSettingsPaths.toString(),
-                    nodeTypesWithDate.toString(),
-                    contributeModePaths.toString(),
-                    hasSpringBean));
-
-            ResultMessage resultMessage = new ResultMessage(moduleName,
-                    moduleVersion,
-                    moduleGroupId.equalsIgnoreCase("org.jahia.modules"),
-                    nodeTypesWithLegacyJmix.toString(),
-                    serverSettingsPaths.toString(),
-                    siteSettingsPaths.toString(),
-                    nodeTypesWithDate.toString(),
-                    contributeModePaths.toString(),
-                    hasSpringBean);
-
-            this.resultReport.add(resultMessage);
         }
+
+        return nodeTypeList;
+    }
+
+    /**
+     * Return a list of nodeTypes having a property with date format
+     *
+     * @param nodeTypeIterator Node type iterator for a specific module
+     * @return Modules list
+     */
+    private List<String> getNodeTypesDateFormat(NodeTypeRegistry.JahiaNodeTypeIterator nodeTypeIterator) {
+        List<String> nodeTypeList = new ArrayList<String>();
+
+        for (ExtendedNodeType moduleNodeType : nodeTypeIterator) {
+            String nodeTypeName = moduleNodeType.getName();
+            ExtendedPropertyDefinition[] allPropertyDefinitions = moduleNodeType.getPropertyDefinitions();
+
+            for (ExtendedPropertyDefinition propertyDefinition : allPropertyDefinitions) {
+                String formatValue = propertyDefinition.getSelectorOptions().get("format");
+
+                if (formatValue != null) {
+                    try {
+                        SimpleDateFormat temp = new SimpleDateFormat(formatValue);
+
+                        if (nodeTypeList.contains(nodeTypeName) == false) {
+                            nodeTypeList.add(nodeTypeName);
+                        }
+                    } catch (Exception e) {
+                        logger.debug(String.format("Pattern %s is not a Date", formatValue));
+                    }
+                }
+            }
+        }
+
+        return nodeTypeList;
+    }
+
+    /**
+     * Indicates if the context uses Spring
+     *
+     * @param bundleContext Context of bundle
+     * @return true if is Spring; false otherwise
+     */
+    private boolean isSpringContext(AbstractApplicationContext bundleContext) {
+        if (bundleContext == null) {
+            return false;
+        }
+
+        if (bundleContext.getDisplayName() != null) {
+            String[] beanDefinitionNames = bundleContext.getBeanDefinitionNames();
+
+            for (String beanDefinitionName : beanDefinitionNames) {
+                if (beanDefinitionName.contains("springframework")) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Fill report for package that matches filter
+     *
+     * @param aPackage Module to be analyzed
+     */
+    private void fillReport(JahiaTemplatesPackage aPackage) {
+        String moduleName = aPackage.getId();
+        String moduleVersion = aPackage.getVersion().toString();
+        String moduleGroupId = aPackage.getGroupId();
+        String modulescmURI = aPackage.getScmURI();
+
+        if (jahiaStoreModules.contains(moduleName.toLowerCase())) {
+            return;
+        }
+
+        if (removeJahiaGit == true && modulescmURI.toLowerCase().contains("scm:git:git@github.com:jahia/")) {
+            return;
+        }
+
+        boolean hasSpringBean = isSpringContext(aPackage.getContext());
+        List<String> nodeTypesWithLegacyJmix = getNodeTypesWithJmix(
+                NodeTypeRegistry.getInstance().getNodeTypes(moduleName), "jmix:cmContentTreeDisplayable");
+        List<String> nodeTypesWithDate = getNodeTypesDateFormat(NodeTypeRegistry.getInstance().getNodeTypes(moduleName));
+        List<String> siteSettingsPaths = getModuleListByQuery(SITE_SELECT, moduleName, moduleVersion);
+        List<String> serverSettingsPaths = getModuleListByQuery(SERVER_SELECT, moduleName, moduleVersion);
+        List<String> contributeModePaths = getModuleListByQuery(CONTRIBUTE_MODE_SELECT, moduleName, moduleVersion);
+
+        logger.info(String.format("moduleName=%s moduleVersion=%s org.jahia.modules=%s "
+                        + "nodeTypesMixin=%s serverSettingsPaths=%s siteSettingsPaths=%s "
+                        + "nodeTypesDate=%s contributeModePaths=%s useSpring=%s",
+                moduleName,
+                moduleVersion,
+                moduleGroupId.equalsIgnoreCase("org.jahia.modules"),
+                nodeTypesWithLegacyJmix.toString(),
+                serverSettingsPaths.toString(),
+                siteSettingsPaths.toString(),
+                nodeTypesWithDate.toString(),
+                contributeModePaths.toString(),
+                hasSpringBean));
+
+        ResultMessage resultMessage = new ResultMessage(moduleName,
+                moduleVersion,
+                moduleGroupId.equalsIgnoreCase("org.jahia.modules"),
+                nodeTypesWithLegacyJmix.toString(),
+                serverSettingsPaths.toString(),
+                siteSettingsPaths.toString(),
+                nodeTypesWithDate.toString(),
+                contributeModePaths.toString(),
+                hasSpringBean);
+
+        this.resultReport.add(resultMessage);
+
     }
 
 
@@ -286,14 +300,30 @@ public class ModulesMigrationHandler {
 
         logger.info("Starting modules report");
 
+        this.removeStore = environmentInfo.isSrcRemoveStore();
+        this.removeJahiaGit = environmentInfo.isSrcRemoveJahia();
+        this.onlyStarted = environmentInfo.isSrcStartedOnly();
+        this.addSystem = environmentInfo.isSrcAddSystemModules();
+
         resultReport.clear();
         jahiaStoreModules.clear();
 
-        loadStoreJahiaModules();
-        buildReportLocalModules(environmentInfo.isSrcStartedOnly(),
-                environmentInfo.isSrcRemoveStore(),
-                environmentInfo.isSrcAddSystemModules(),
-                environmentInfo.isSrcRemoveJahia());
+        if (removeStore == true) {
+            loadStoreJahiaModules();
+        }
+
+        JahiaTemplateManagerService templateManager = ServicesRegistry.getInstance().getJahiaTemplateManagerService();
+
+        List<JahiaTemplatesPackage> packagesList = (onlyStarted) ? templateManager.getAvailableTemplatePackages() :
+                new ArrayList<JahiaTemplatesPackage>(templateManager.getRegisteredBundles().values());
+
+        for (JahiaTemplatesPackage module : packagesList) {
+            if (module.getModuleType().equals("module")
+                    || module.getModuleType().equals("templatesSet")
+                    || (module.getModuleType().equals("system") && addSystem)) {
+                fillReport(module);
+            }
+        }
 
         if (this.errorMessage.length() > 0) {
             context.getMessageContext().addMessage(new MessageBuilder().error()
