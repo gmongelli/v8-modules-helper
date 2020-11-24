@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.binding.message.MessageBuilder;
 import org.springframework.context.support.AbstractApplicationContext;
+import org.jahia.bin.Action;
 import org.springframework.webflow.execution.RequestContext;
 
 import javax.jcr.NodeIterator;
@@ -53,6 +54,7 @@ public class ModulesMigrationHandler {
     private StringBuilder errorMessage = new StringBuilder();
     private HttpClientService httpClientService;
     private List<String> jahiaStoreModules = new ArrayList<>();
+    private Map<String, Action> actionsMap;
 
     private static boolean removeStore = false;
     private static boolean removeJahiaGit = false;
@@ -209,6 +211,33 @@ public class ModulesMigrationHandler {
     }
 
     /**
+     * Collects actions from Package
+     *
+     * @param aPackage
+     * @return Modules list
+     */
+    private List<String> getModuleActions(JahiaTemplatesPackage aPackage) {
+        List<String> actionsList = new ArrayList<String>();
+
+        AbstractApplicationContext context = aPackage.getContext();
+
+        if (context != null) {
+
+            String[] beanNames = context.getBeanDefinitionNames();
+
+            for (String beanName : beanNames) {
+                for (String actionName : this.actionsMap.keySet()) {
+                    if (beanName.toLowerCase().contains(actionName.toLowerCase()) && actionsList.contains(actionName) == false) {
+                        actionsList.add(actionName);
+                    }
+                }
+            }
+        }
+
+        return actionsList;
+    }
+
+    /**
      * Indicates if the context uses Spring
      *
      * @param bundleContext Context of bundle
@@ -258,10 +287,11 @@ public class ModulesMigrationHandler {
         List<String> siteSettingsPaths = getModuleListByQuery(SITE_SELECT, moduleName, moduleVersion);
         List<String> serverSettingsPaths = getModuleListByQuery(SERVER_SELECT, moduleName, moduleVersion);
         List<String> contributeModePaths = getModuleListByQuery(CONTRIBUTE_MODE_SELECT, moduleName, moduleVersion);
+        List<String> customActions = getModuleActions(aPackage);
 
         logger.info(String.format("moduleName=%s moduleVersion=%s org.jahia.modules=%s "
                         + "nodeTypesMixin=%s serverSettingsPaths=%s siteSettingsPaths=%s "
-                        + "nodeTypesDate=%s contributeModePaths=%s useSpring=%s",
+                        + "nodeTypesDate=%s contributeModePaths=%s useSpring=%s customActions=%s",
                 moduleName,
                 moduleVersion,
                 moduleGroupId.equalsIgnoreCase("org.jahia.modules"),
@@ -270,7 +300,8 @@ public class ModulesMigrationHandler {
                 siteSettingsPaths.toString(),
                 nodeTypesWithDate.toString(),
                 contributeModePaths.toString(),
-                hasSpringBean));
+                hasSpringBean,
+                customActions.toString()));
 
         ResultMessage resultMessage = new ResultMessage(moduleName,
                 moduleVersion,
@@ -280,7 +311,8 @@ public class ModulesMigrationHandler {
                 siteSettingsPaths.toString(),
                 nodeTypesWithDate.toString(),
                 contributeModePaths.toString(),
-                hasSpringBean);
+                hasSpringBean,
+                customActions.toString());
 
         this.resultReport.add(resultMessage);
 
@@ -304,6 +336,10 @@ public class ModulesMigrationHandler {
         this.removeJahiaGit = environmentInfo.isSrcRemoveJahia();
         this.onlyStarted = environmentInfo.isSrcStartedOnly();
         this.addSystem = environmentInfo.isSrcAddSystemModules();
+
+        this.actionsMap = ServicesRegistry.getInstance().getJahiaTemplateManagerService().getActions();
+        this.actionsMap.remove("default");
+        this.actionsMap.remove("webflow");
 
         resultReport.clear();
         jahiaStoreModules.clear();

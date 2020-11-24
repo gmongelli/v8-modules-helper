@@ -2,3 +2,4 @@
 v8-modules-helper.iml
 *.swp
 target/*
+*.iml

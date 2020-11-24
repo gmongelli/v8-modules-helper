@@ -89,6 +89,7 @@
             <th>contributeMode</th>
             <th>DateFormat</th>
             <th>Spring</th>
+            <th>Actions</th>
         </tr>
         </thead>
         <c:forEach items="${migrationReport}" var="module">
@@ -101,6 +102,7 @@
                 <td>${module.contributeMode}</td>
                 <td>${module.nodeTypesDate}</td>
                 <td>${module.hasSpringBean}</td>
+                <td>${module.customActions}</td>
             </tr>
         </c:forEach>
     </table>

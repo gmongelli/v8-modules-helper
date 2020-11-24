@@ -13,6 +13,7 @@ public class ResultMessage implements Serializable {
     String nodeTypesDate;
     String contributeMode;
     boolean hasSpringBean;
+    String customActions;
 
     private static final long serialVersionUID = -6552128415414065542L;
 
@@ -27,7 +28,8 @@ public class ResultMessage implements Serializable {
                          String siteSettings,
                          String nodeTypesDate,
                          String contributeMode,
-                         boolean hasSpringBean) {
+                         boolean hasSpringBean,
+                         String customActions) {
         this.moduleName = moduleName;
         this.moduleVersion = moduleVersion;
         this.jahiaGroup = jahiaGroup;
@@ -37,6 +39,7 @@ public class ResultMessage implements Serializable {
         this.nodeTypesDate = nodeTypesDate;
         this.contributeMode = contributeMode;
         this.hasSpringBean = hasSpringBean;
+        this.customActions = customActions;
     }
     public String getNodeTypesDate() { return nodeTypesDate; }
 
@@ -97,4 +100,8 @@ public class ResultMessage implements Serializable {
     public boolean isJahiaGroup() { return jahiaGroup; }
 
     public void setJahiaGroup(boolean jahiaGroup) { this.jahiaGroup = jahiaGroup; }
+
+    public String getCustomActions() { return customActions; }
+
+    public void setCustomActions(String customActions) { this.customActions = customActions; }
 }
