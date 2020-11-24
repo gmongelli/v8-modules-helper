@@ -39,7 +39,7 @@
                                         jcr:mixinTypes="jmix:rbTitle"
                                         jcr:primaryType="jnt:contentTemplate">
                             <pagecontent jcr:primaryType="jnt:contentList">
-                                <v8-modules-helper jcr:primaryType="jnt:modulesHelper"/>
+                                <v8-modules-helper jcr:primaryType="jnt:v8modulesHelper"/>
                             </pagecontent>
                         </v8ModulesHelper>
                     </system-components>

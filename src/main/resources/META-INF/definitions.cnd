@@ -1,5 +1,5 @@
 <jmix = 'http://www.jahia.org/jahia/mix/1.0'>
 <jnt = 'http://www.jahia.org/jahia/nt/1.0'>
 
-[jnt:modulesHelper] > jnt:content, jmix:siteComponent, mix:title, jmix:studioOnly
+[jnt:v8modulesHelper] > jnt:content, jmix:siteComponent, mix:title, jmix:studioOnly
 
