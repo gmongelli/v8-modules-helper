@@ -89,7 +89,7 @@
             <th>contributeMode</th>
             <th>DateFormat</th>
             <th>Spring</th>
-            <th>Actions</th>
+            <th>Spring Actions</th>
         </tr>
         </thead>
         <c:forEach items="${migrationReport}" var="module">
@@ -132,4 +132,10 @@
     <h2>Known Issues</h2>
     <fmt:message key="link.knownIssues" var="linkKnownIssues"/>
     <p><a href="${linkKnownIssues}">Documentation</a></p>
+</div>
+
+<div class="box-1">
+    <h2>From 8.0.0.0 to 8.0.1.0</h2>
+    <fmt:message key="link.upgrade_8000_8010" var="upgrade_8000_8010"/>
+    <p><a href="${upgrade_8000_8010}">Upgrade Instructions</a></p>
 </div>
