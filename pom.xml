@@ -53,7 +53,7 @@
   </parent>
   <groupId>org.jahia.modules</groupId>
   <artifactId>v8-modules-helper</artifactId>
-  <version>1.0.2</version>
+  <version>1.0.3-SNAPSHOT</version>
   <packaging>bundle</packaging>
   <name>v8-modules-helper</name>
   <description>A module to help adjusting custom modules to Jahia V8</description>
@@ -61,7 +61,7 @@
     <connection>scm:git:git@github.com:Jahia/v8-modules-helper.git</connection>
     <developerConnection>scm:git:git@github.com:Jahia/v8-modules-helper.git</developerConnection>
     <url>https://github.com/Jahia/v8-modules-helper.git</url>
-    <tag>v8-modules-helper-1.0.2</tag>
+    <tag>HEAD</tag>
   </scm>
   <properties>
     <jahia-depends>default,serverSettings</jahia-depends>
