@@ -306,13 +306,13 @@ public class ModulesMigrationHandler {
         ResultMessage resultMessage = new ResultMessage(moduleName,
                 moduleVersion,
                 moduleGroupId.equalsIgnoreCase("org.jahia.modules"),
-                nodeTypesWithLegacyJmix.toString(),
-                serverSettingsPaths.toString(),
-                siteSettingsPaths.toString(),
-                nodeTypesWithDate.toString(),
-                contributeModePaths.toString(),
+                nodeTypesWithLegacyJmix.toString().replace(",",";"),
+                serverSettingsPaths.toString().replace(",",";"),
+                siteSettingsPaths.toString().replace(",",";"),
+                nodeTypesWithDate.toString().replace(",",";"),
+                contributeModePaths.toString().replace(",",";"),
                 hasSpringBean,
-                customActions.toString());
+                customActions.toString().replace(",",";"));
 
         this.resultReport.add(resultMessage);
 
