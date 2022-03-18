@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.binding.message.MessageBuilder;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.jahia.bin.Action;
+import org.springframework.webflow.context.ExternalContext;
 import org.springframework.webflow.execution.RequestContext;
 
 import javax.jcr.NodeIterator;
@@ -34,7 +35,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- *    
+ * Â Â Â 
  * Class responsible to run the report and export results to webflow
  */
 public class ModulesMigrationHandler {
@@ -62,6 +63,10 @@ public class ModulesMigrationHandler {
     private static boolean addSystem = false;
 
     private void initClient() {
+    	
+    	if (httpClientService != null ) {
+    		return;
+    	}
         HttpClientParams params = new HttpClientParams();
         params.setAuthenticationPreemptive(true);
         params.setCookiePolicy("ignoreCookies");
@@ -320,7 +325,7 @@ public class ModulesMigrationHandler {
 
 
     /**
-     *     
+     * Â Â Â Â 
      * Execute the migration
      *
      * @param environmentInfo Object containing environment information read from frontend
@@ -373,4 +378,26 @@ public class ModulesMigrationHandler {
 
         return true;
     }
+    
+	public boolean checkStoreAvailibilty(ExternalContext context) {
+		
+		try {
+	        initClient();
+	        Map<String, String> headers = new HashMap<String, String>();
+	        headers.put("accept", "application/json");
+	        if (httpClientService.executeGet(JAHIA_STORE_URL, headers) == null) {
+	        	context.getGlobalSessionMap().put("connectionToStore", Boolean.FALSE);
+	        } else {
+	        	context.getGlobalSessionMap().remove("connectionToStore");
+	        }
+		} catch (Exception ex) {
+			context.getGlobalSessionMap().put("connectionToStore", Boolean.FALSE);
+			return false;
+		}
+		
+		
+		
+		return true;
+	}
+	
 }
