@@ -25,6 +25,12 @@
 <%
     request.setAttribute("licenseId",org.jahia.modules.v8moduleshelper.utils.LicenseUtils.getLicenseId());
 %>
+  <c:if test="${not empty connectionToStore and not connectionToStore}">
+    <div class="box-1">
+      <p class="serverId" style="color:red"><b><fmt:message key="msg.noInternetConnection"></fmt:message></b></div>
+  </div>
+  </c:if>
+  
 <div class="box-1">
     <p class="serverId"><b>Jahia 8 license key</b></p>
     <p class="serverId">A new license key is required to run Jahia 8.</p>
@@ -135,7 +141,7 @@
                     <div class="span4">
                         <div class="form-group">
                             <button id="migrateModules" class="btn btn-primary" type="submit"
-                                    name="_eventId_migrateModules">
+                                    name="_eventId_migrateModules" <c:if test="${not empty connectionToStore and not connectionToStore}"> disabled="disabled" </c:if>>
                                 <fmt:message key="lbl.btnSubmit"></fmt:message>
                             </button>
                         </div>

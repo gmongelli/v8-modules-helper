@@ -6,7 +6,9 @@
     <var name="environmentInfo" class="org.jahia.modules.v8moduleshelper.model.EnvironmentInfo"/>
 
     <view-state id="environmentInfo" model="environmentInfo">
-
+		<on-entry>
+			<evaluate expression="modulesMigrationHandler.checkStoreAvailibilty(externalContext)" />
+		</on-entry>
         <transition on="migrateModules" to="isValid">
             <evaluate
                     expression="modulesMigrationHandler.execute(
