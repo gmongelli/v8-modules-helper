@@ -35,7 +35,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
- * Â Â Â 
+ *
  * Class responsible to run the report and export results to webflow
  */
 public class ModulesMigrationHandler {
@@ -63,7 +63,7 @@ public class ModulesMigrationHandler {
     private static boolean addSystem = false;
 
     private void initClient() {
-    	
+
     	if (httpClientService != null ) {
     		return;
     	}
@@ -325,7 +325,7 @@ public class ModulesMigrationHandler {
 
 
     /**
-     * Â Â Â Â 
+     * 
      * Execute the migration
      *
      * @param environmentInfo Object containing environment information read from frontend
@@ -378,9 +378,9 @@ public class ModulesMigrationHandler {
 
         return true;
     }
-    
+
 	public boolean checkStoreAvailibilty(ExternalContext context) {
-		
+
 		try {
 	        initClient();
 	        Map<String, String> headers = new HashMap<String, String>();
@@ -394,10 +394,10 @@ public class ModulesMigrationHandler {
 			context.getGlobalSessionMap().put("connectionToStore", Boolean.FALSE);
 			return false;
 		}
-		
-		
-		
+
+
+
 		return true;
 	}
-	
+
 }
