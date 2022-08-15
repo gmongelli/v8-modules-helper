@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Function;
 
 /**
  *
@@ -58,6 +59,7 @@ public class ModulesMigrationHandler {
             "SELECT * FROM [jnt:template] As template WHERE template.[j:view] = 'serverSettings' AND";
     private static final String CONTRIBUTE_MODE_SELECT =
             "SELECT * FROM [jmix:contributeMode] As template WHERE";
+    private static final String CONTENT_TEMPLATES_SELECT = "select * from [jnt:contentTemplate] As template where ";
 
     private static final Logger logger = LoggerFactory.getLogger(ModulesMigrationHandler.class);
     private static final String STORE_MODULES_LIST = "storeModulesList";
@@ -146,6 +148,10 @@ public class ModulesMigrationHandler {
      * @return Modules list
      */
     private List<String> getModuleListByQuery(String querySelect, String moduleName, String moduleVersion) {
+        return getModuleListByQuery(querySelect, moduleName, moduleVersion, JCRNodeWrapper::getPath);
+    }
+
+    private List<String> getModuleListByQuery(String querySelect, String moduleName, String moduleVersion, Function<JCRNodeWrapper,String> transformer) {
         List<String> modulesPathList = new ArrayList<String>();
 
         String modulePath = String.format(" ISDESCENDANTNODE (template, '/modules/%s/%s/templates/')",
@@ -159,7 +165,7 @@ public class ModulesMigrationHandler {
                     .createQuery(querySelect + modulePath, Query.JCR_SQL2).execute().getNodes();
             if (iterator.hasNext()) {
                 final JCRNodeWrapper node = (JCRNodeWrapper) iterator.nextNode();
-                modulesPathList.add(node.getPath());
+                modulesPathList.add(transformer.apply(node));
             }
 
         } catch (RepositoryException e) {
@@ -305,11 +311,13 @@ public class ModulesMigrationHandler {
         List<String> siteSettingsPaths = getModuleListByQuery(SITE_SELECT, moduleName, moduleVersion);
         List<String> serverSettingsPaths = getModuleListByQuery(SERVER_SELECT, moduleName, moduleVersion);
         List<String> contributeModePaths = getModuleListByQuery(CONTRIBUTE_MODE_SELECT, moduleName, moduleVersion);
+        final List<String> contentTemplates = getModuleListByQuery(CONTENT_TEMPLATES_SELECT, moduleName, moduleVersion,
+                node -> String.format("%s : {%s}", node.getName(), node.getPropertyAsString("j:applyOn")));
         List<String> customActions = getModuleActions(aPackage);
 
         logger.info(String.format("moduleName=%s moduleVersion=%s org.jahia.modules=%s "
                         + "nodeTypesMixin=%s serverSettingsPaths=%s siteSettingsPaths=%s "
-                        + "nodeTypesDate=%s contributeModePaths=%s useSpring=%s customActions=%s",
+                        + "nodeTypesDate=%s contributeModePaths=%s useSpring=%s customActions=%s contentTemplates=%s",
                 moduleName,
                 moduleVersion,
                 moduleGroupId.equalsIgnoreCase("org.jahia.modules"),
@@ -319,7 +327,8 @@ public class ModulesMigrationHandler {
                 nodeTypesWithDate.toString(),
                 contributeModePaths.toString(),
                 hasSpringBean,
-                customActions.toString()));
+                customActions.toString(),
+                contentTemplates));
 
         ResultMessage resultMessage = new ResultMessage(moduleName,
                 moduleVersion,
@@ -330,7 +339,8 @@ public class ModulesMigrationHandler {
                 nodeTypesWithDate.toString().replace(",",";"),
                 contributeModePaths.toString().replace(",",";"),
                 hasSpringBean,
-                customActions.toString().replace(",",";"));
+                customActions.toString().replace(",",";"),
+                contentTemplates);
 
         this.resultReport.add(resultMessage);
 

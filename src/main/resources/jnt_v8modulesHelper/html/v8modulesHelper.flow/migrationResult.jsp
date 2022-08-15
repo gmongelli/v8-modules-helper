@@ -84,6 +84,7 @@
             <th>Name</th>
             <th>org.jahia.modules</th>
             <th>jmix:cmContentTreeDisplayable</th>
+            <th>Types with content template</th>
             <th>serverSettings</th>
             <th>siteSettings</th>
             <th>contributeMode</th>
@@ -93,10 +94,12 @@
         </tr>
         </thead>
         <c:forEach items="${migrationReport}" var="module">
+            <%--@elvariable id="migrationReport" type="org.jahia.modules.v8moduleshelper.ResultMessage"--%>
             <tr>
                 <td>${module.moduleName}/${module.moduleVersion}</td>
                 <td>${module.jahiaGroup}</td>
                 <td>${module.nodeTypes}</td>
+                <td>${module.typesWithContentTemplate}</td>
                 <td>${module.serverSettings}</td>
                 <td>${module.siteSettings}</td>
                 <td>${module.contributeMode}</td>

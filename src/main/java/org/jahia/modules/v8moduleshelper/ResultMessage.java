@@ -1,6 +1,9 @@
 package org.jahia.modules.v8moduleshelper;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.io.Serializable;
+import java.util.List;
 
 public class ResultMessage implements Serializable {
 
@@ -14,10 +17,11 @@ public class ResultMessage implements Serializable {
     String contributeMode;
     boolean hasSpringBean;
     String customActions;
+    String typesWithContentTemplate;
 
     private static final long serialVersionUID = -6552128415414065542L;
 
-    /**     
+    /**
      * Constructor for ResultMessage
      */
     public ResultMessage(String moduleName,
@@ -29,7 +33,8 @@ public class ResultMessage implements Serializable {
                          String nodeTypesDate,
                          String contributeMode,
                          boolean hasSpringBean,
-                         String customActions) {
+                         String customActions,
+                         List<String> typesWithContentTemplate) {
         this.moduleName = moduleName;
         this.moduleVersion = moduleVersion;
         this.jahiaGroup = jahiaGroup;
@@ -40,6 +45,7 @@ public class ResultMessage implements Serializable {
         this.contributeMode = contributeMode;
         this.hasSpringBean = hasSpringBean;
         this.customActions = customActions;
+        this.typesWithContentTemplate = StringUtils.join(typesWithContentTemplate, ";");
     }
     public String getNodeTypesDate() { return nodeTypesDate; }
 
@@ -104,4 +110,8 @@ public class ResultMessage implements Serializable {
     public String getCustomActions() { return customActions; }
 
     public void setCustomActions(String customActions) { this.customActions = customActions; }
+
+    public String getTypesWithContentTemplate() {
+        return typesWithContentTemplate;
+    }
 }
