@@ -16,6 +16,7 @@ import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.content.JCRSessionWrapper;
 import org.jahia.services.content.JCRTemplate;
+import org.jahia.services.content.decorator.JCRFileNode;
 import org.jahia.services.content.nodetypes.ExtendedNodeType;
 import org.jahia.services.content.nodetypes.ExtendedPropertyDefinition;
 import org.jahia.services.content.nodetypes.NodeTypeRegistry;
@@ -65,6 +66,7 @@ public class ModulesMigrationHandler {
     private static final String JCR_FOLDER = "v8-migration";
     private static final String SYSTEMSITE_FILES_PATH = "/sites/systemsite/files";
     private static final String MODULES_LIST_FILENAME = "modules-list.json";
+    private static final String MODULES_LIST_FILE_PATH = SYSTEMSITE_FILES_PATH + "/" + JCR_FOLDER + "/" + MODULES_LIST_FILENAME;
     private List<ResultMessage> resultReport = new ArrayList<>();
     private StringBuilder errorMessage = new StringBuilder();
     private HttpClientService httpClientService;
@@ -410,12 +412,51 @@ public class ModulesMigrationHandler {
         final Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
         final String json = httpClientService.executeGet(JAHIA_STORE_URL, headers);
-        try {
-            final JSONArray modulesList = new JSONArray(json).getJSONObject(0).getJSONArray("modules");
-            writeModulesListInTheJCR(modulesList);
+        if (StringUtils.isNotBlank(json)) {
+            try {
+                final JSONArray modulesList = new JSONArray(json).getJSONObject(0).getJSONArray("modules");
+                writeModulesListInTheJCR(modulesList);
+                return modulesList;
+            } catch (JSONException e) {
+                logger.error("", e);
+            }
+        }
+
+        logger.info("Failed to download the modules list from the store, loading the list from the local data");
+        final JSONArray modulesList = loadModulesListFromLocal();
+        if (modulesList != null) {
             return modulesList;
-        } catch (JSONException e) {
+        } else {
+            logger.error("Failed to load the modules list, from the store or from the local data");
+            return null;
+        }
+    }
+
+    private JSONArray loadModulesListFromLocal() {
+        final String json;
+        try {
+            json = JCRTemplate.getInstance().doExecuteWithSystemSessionAsUser(null, Constants.EDIT_WORKSPACE, null, new JCRCallback<String>() {
+                @Override
+                public String doInJCR(JCRSessionWrapper session) throws RepositoryException {
+                    if (!session.nodeExists(MODULES_LIST_FILE_PATH)) return null;
+                    final JCRFileNode file = (JCRFileNode) session.getNode(MODULES_LIST_FILE_PATH);
+                    return file.getFileContent().getText();
+                }
+            });
+        } catch (RepositoryException e) {
             logger.error("", e);
+            return null;
+        }
+
+        final String msg = "Failed to load the modules list from the local data";
+        if (StringUtils.isBlank(json)) {
+            logger.warn(msg);
+        } else {
+            try {
+                return new JSONArray(json);
+            } catch (JSONException e) {
+                    logger.error(msg, e);
+            }
         }
 
         return null;
