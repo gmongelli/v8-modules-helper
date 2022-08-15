@@ -4,15 +4,18 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jahia.api.Constants;
 import org.jahia.data.templates.JahiaTemplatesPackage;
 import org.jahia.modules.v8moduleshelper.model.EnvironmentInfo;
 import org.jahia.modules.v8moduleshelper.ResultMessage;
 import org.jahia.registries.ServicesRegistry;
+import org.jahia.services.content.JCRCallback;
 import org.jahia.services.content.JCRNodeWrapper;
 import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.content.JCRSessionWrapper;
+import org.jahia.services.content.JCRTemplate;
 import org.jahia.services.content.nodetypes.ExtendedNodeType;
 import org.jahia.services.content.nodetypes.ExtendedPropertyDefinition;
 import org.jahia.services.content.nodetypes.NodeTypeRegistry;
@@ -32,6 +35,10 @@ import org.springframework.webflow.execution.RequestContext;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.query.Query;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -55,6 +62,9 @@ public class ModulesMigrationHandler {
     private static final String STORE_MODULES_LIST = "storeModulesList";
     private static final String STORE_MODULES_LIST_AVAILABLE = "storeModulesListAvailable";
     private static final String STORE_MODULES_LIST_ERROR_MESSAGE = "Cannot load information from Jahia Store. Please consider including Jahia modules in the report";
+    private static final String JCR_FOLDER = "v8-migration";
+    private static final String SYSTEMSITE_FILES_PATH = "/sites/systemsite/files";
+    private static final String MODULES_LIST_FILENAME = "modules-list.json";
     private List<ResultMessage> resultReport = new ArrayList<>();
     private StringBuilder errorMessage = new StringBuilder();
     private HttpClientService httpClientService;
@@ -401,12 +411,51 @@ public class ModulesMigrationHandler {
         headers.put("accept", "application/json");
         final String json = httpClientService.executeGet(JAHIA_STORE_URL, headers);
         try {
-            return new JSONArray(json).getJSONObject(0).getJSONArray("modules");
+            final JSONArray modulesList = new JSONArray(json).getJSONObject(0).getJSONArray("modules");
+            writeModulesListInTheJCR(modulesList);
+            return modulesList;
         } catch (JSONException e) {
             logger.error("", e);
         }
 
         return null;
+    }
+
+    private void writeModulesListInTheJCR(JSONArray modulesList) {
+        try {
+            JCRTemplate.getInstance().doExecuteWithSystemSessionAsUser(null, Constants.EDIT_WORKSPACE, null, new JCRCallback<Void>() {
+                @Override
+                public Void doInJCR(JCRSessionWrapper session) throws RepositoryException {
+                    final JCRNodeWrapper filesFolder = session.getNode(SYSTEMSITE_FILES_PATH);
+                    final JCRNodeWrapper outputDir = filesFolder.hasNode(JCR_FOLDER) ?
+                            filesFolder.getNode(JCR_FOLDER) :
+                            filesFolder.addNode(JCR_FOLDER, Constants.JAHIANT_FOLDER);
+                    if (!outputDir.isNodeType(Constants.JAHIANT_FOLDER)) {
+                        logger.error(String.format("Impossible to write the folder %s of type %s", outputDir.getPath(), outputDir.getPrimaryNodeTypeName()));
+                        return null;
+                    }
+
+                    final ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    try {
+                        IOUtils.write(modulesList.toString(), out, StandardCharsets.UTF_8);
+                    } catch (IOException e) {
+                        logger.error("", e);
+                        return null;
+                    }
+                    final byte[] bytes = out.toByteArray();
+
+                    final JCRNodeWrapper reportNode = outputDir.uploadFile(MODULES_LIST_FILENAME, new ByteArrayInputStream(bytes), "application/json");
+                    session.save();
+                    final String reportPath = reportNode.getPath();
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(String.format("Written the modules list in %s", reportPath));
+                    }
+                    return null;
+                }
+            });
+        } catch (RepositoryException e) {
+            logger.error("", e);
+        }
     }
 
 }
