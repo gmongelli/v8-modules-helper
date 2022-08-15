@@ -4,6 +4,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.params.HttpClientParams;
 import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
+import org.apache.commons.lang.StringUtils;
 import org.jahia.api.Constants;
 import org.jahia.data.templates.JahiaTemplatesPackage;
 import org.jahia.modules.v8moduleshelper.model.EnvironmentInfo;
@@ -51,6 +52,9 @@ public class ModulesMigrationHandler {
             "SELECT * FROM [jmix:contributeMode] As template WHERE";
 
     private static final Logger logger = LoggerFactory.getLogger(ModulesMigrationHandler.class);
+    private static final String STORE_MODULES_LIST = "storeModulesList";
+    private static final String STORE_MODULES_LIST_AVAILABLE = "storeModulesListAvailable";
+    private static final String STORE_MODULES_LIST_ERROR_MESSAGE = "Cannot load information from Jahia Store. Please consider including Jahia modules in the report";
     private List<ResultMessage> resultReport = new ArrayList<>();
     private StringBuilder errorMessage = new StringBuilder();
     private HttpClientService httpClientService;
@@ -94,33 +98,30 @@ public class ModulesMigrationHandler {
     /**
      * Load modules list from Jahia store
      */
-    private void loadStoreJahiaModules() {
+    private void loadStoreJahiaModules(ExternalContext context) {
 
         initClient();
 
-        Map<String, String> headers = new HashMap<String, String>();
-        headers.put("accept", "application/json");
-        String jsonModuleList = httpClientService.executeGet(JAHIA_STORE_URL, headers);
+        final JSONArray modulesRoot = (JSONArray) context.getGlobalSessionMap().get(STORE_MODULES_LIST);
+        if (modulesRoot == null) {
+            setErrorMessage(STORE_MODULES_LIST_ERROR_MESSAGE);
+            return;
+        }
 
-        JSONArray modulesRoot = null;
         try {
-            modulesRoot = new JSONArray(jsonModuleList);
-            JSONArray moduleList = modulesRoot.getJSONObject(0).getJSONArray("modules");
+            final JSONArray moduleList = modulesRoot.getJSONObject(0).getJSONArray("modules");
             for (int i = 0; i < moduleList.length(); i++) {
                 final JSONObject moduleObject = moduleList.getJSONObject(i);
                 final String moduleName = moduleObject.getString("name");
                 final String groupId = moduleObject.getString("groupId");
 
-                if (groupId.equalsIgnoreCase("org.jahia.modules")) {
+                if (StringUtils.equalsIgnoreCase(groupId, "org.jahia.modules")) {
                     jahiaStoreModules.add(moduleName.toLowerCase());
                 }
             }
         } catch (JSONException e) {
-            setErrorMessage("Cannot load information from Jahia Store."
-                    + " Please consider including Jahia modules in the report");
-            logger.error("Error reading information from Jahia Store. "
-                    + "Please consider including Jahia modules in the report");
-            logger.error(e.toString());
+            setErrorMessage(STORE_MODULES_LIST_ERROR_MESSAGE);
+            logger.error("Error while parsing the information from the Jahia Store", e);
         }
     }
 
@@ -325,7 +326,7 @@ public class ModulesMigrationHandler {
 
 
     /**
-     * 
+     *
      * Execute the migration
      *
      * @param environmentInfo Object containing environment information read from frontend
@@ -350,7 +351,7 @@ public class ModulesMigrationHandler {
         jahiaStoreModules.clear();
 
         if (removeStore == true) {
-            loadStoreJahiaModules();
+            loadStoreJahiaModules(context.getExternalContext());
         }
 
         JahiaTemplateManagerService templateManager = ServicesRegistry.getInstance().getJahiaTemplateManagerService();
@@ -379,25 +380,33 @@ public class ModulesMigrationHandler {
         return true;
     }
 
-	public boolean checkStoreAvailibilty(ExternalContext context) {
+    // TODO remove & clean "connectionToStore"
+    public void init(ExternalContext context) {
+        final JSONArray modulesList = downloadModulesList();
+        if (modulesList != null) {
+            context.getGlobalSessionMap().put("connectionToStore", Boolean.TRUE);
+            context.getGlobalSessionMap().put(STORE_MODULES_LIST_AVAILABLE, Boolean.TRUE);
+            context.getGlobalSessionMap().put(STORE_MODULES_LIST, modulesList);
+        } else {
+            context.getGlobalSessionMap().put("connectionToStore", Boolean.FALSE);
+            context.getGlobalSessionMap().put(STORE_MODULES_LIST_AVAILABLE, Boolean.FALSE);
+            context.getGlobalSessionMap().remove(STORE_MODULES_LIST);
+        }
+    }
 
-		try {
-	        initClient();
-	        Map<String, String> headers = new HashMap<String, String>();
-	        headers.put("accept", "application/json");
-	        if (httpClientService.executeGet(JAHIA_STORE_URL, headers) == null) {
-	        	context.getGlobalSessionMap().put("connectionToStore", Boolean.FALSE);
-	        } else {
-	        	context.getGlobalSessionMap().remove("connectionToStore");
-	        }
-		} catch (Exception ex) {
-			context.getGlobalSessionMap().put("connectionToStore", Boolean.FALSE);
-			return false;
-		}
+    private JSONArray downloadModulesList () {
+        logger.debug("Downloading the modules list from the store");
+        initClient();
+        final Map<String, String> headers = new HashMap<>();
+        headers.put("accept", "application/json");
+        final String json = httpClientService.executeGet(JAHIA_STORE_URL, headers);
+        try {
+            return new JSONArray(json).getJSONObject(0).getJSONArray("modules");
+        } catch (JSONException e) {
+            logger.error("", e);
+        }
 
-
-
-		return true;
-	}
+        return null;
+    }
 
 }

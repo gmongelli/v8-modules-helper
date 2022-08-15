@@ -7,7 +7,7 @@
 
     <view-state id="environmentInfo" model="environmentInfo">
 		<on-entry>
-			<evaluate expression="modulesMigrationHandler.checkStoreAvailibilty(externalContext)" />
+			<evaluate expression="modulesMigrationHandler.init(externalContext)" />
 		</on-entry>
         <transition on="migrateModules" to="isValid">
             <evaluate
