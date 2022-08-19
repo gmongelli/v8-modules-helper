@@ -82,32 +82,18 @@
         <thead>
         <tr>
             <th>Name</th>
-            <th>org.jahia.modules</th>
-            <th>jmix:cmContentTreeDisplayable</th>
-            <th>Types with content template</th>
-            <th>serverSettings</th>
-            <th>siteSettings</th>
-            <th>contributeMode</th>
-            <th>DateFormat</th>
-            <th>Spring</th>
-            <th>Spring Actions</th>
-            <th>Empty Spring Files</th>
+            <c:forEach items="${migrationReport[0].dataKeys}" var="label">
+                <th>${label}</th>
+            </c:forEach>
         </tr>
         </thead>
         <c:forEach items="${migrationReport}" var="module">
-            <%--@elvariable id="migrationReport" type="org.jahia.modules.v8moduleshelper.ResultMessage"--%>
+            <%--@elvariable id="module" type="org.jahia.modules.v8moduleshelper.ResultMessage"--%>
             <tr>
                 <td>${module.moduleName}/${module.moduleVersion}</td>
-                <td>${module.jahiaGroup}</td>
-                <td>${module.nodeTypes}</td>
-                <td>${module.typesWithContentTemplate}</td>
-                <td>${module.serverSettings}</td>
-                <td>${module.siteSettings}</td>
-                <td>${module.contributeMode}</td>
-                <td>${module.nodeTypesDate}</td>
-                <td>${module.hasSpringBean}</td>
-                <td>${module.customActions}</td>
-                <td>${module.emptySpringFiles}</td>
+                <c:forEach items="${module.allData}" var="value">
+                    <td>${fn:replace(value, ',', ';')}</td>
+                </c:forEach>
             </tr>
         </c:forEach>
     </table>

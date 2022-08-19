@@ -323,59 +323,43 @@ public class ModulesMigrationHandler {
      * @param aPackage Module to be analyzed
      */
     private void fillReport(JahiaTemplatesPackage aPackage) {
-        String moduleName = aPackage.getId();
-        String moduleVersion = aPackage.getVersion().toString();
-        String moduleGroupId = aPackage.getGroupId();
-        String modulescmURI = aPackage.getScmURI();
+        final String moduleName = aPackage.getId();
+        final String moduleVersion = aPackage.getVersion().toString();
+        final String moduleGroupId = aPackage.getGroupId();
+        final String modulescmURI = aPackage.getScmURI();
 
         if (jahiaStoreModules.contains(moduleName.toLowerCase())) {
             return;
         }
 
-        if (removeJahiaGit == true && modulescmURI.toLowerCase().contains("scm:git:git@github.com:jahia/")) {
+        if (removeJahiaGit && modulescmURI.toLowerCase().contains("scm:git:git@github.com:jahia/")) {
             return;
         }
 
-        boolean hasSpringBean = isSpringContext(aPackage.getContext());
-        List<String> nodeTypesWithLegacyJmix = getNodeTypesWithMixin(moduleName, "jmix:cmContentTreeDisplayable");
-        List<String> nodeTypesWithDate = getNodeTypesDateFormat(NodeTypeRegistry.getInstance().getNodeTypes(moduleName));
-        List<String> siteSettingsPaths = getModuleResourcesByQuery(SITE_SELECT, moduleName, moduleVersion);
-        List<String> serverSettingsPaths = getModuleResourcesByQuery(SERVER_SELECT, moduleName, moduleVersion);
-        List<String> contributeModePaths = getModuleResourcesByQuery(CONTRIBUTE_MODE_SELECT, moduleName, moduleVersion);
+        final boolean hasSpringBean = isSpringContext(aPackage.getContext());
+        final List<String> nodeTypesWithLegacyJmix = getNodeTypesWithMixin(moduleName, "jmix:cmContentTreeDisplayable");
+        final List<String> nodeTypesWithDate = getNodeTypesDateFormat(NodeTypeRegistry.getInstance().getNodeTypes(moduleName));
+        final List<String> siteSettingsPaths = getModuleResourcesByQuery(SITE_SELECT, moduleName, moduleVersion);
+        final List<String> serverSettingsPaths = getModuleResourcesByQuery(SERVER_SELECT, moduleName, moduleVersion);
+        final List<String> contributeModePaths = getModuleResourcesByQuery(CONTRIBUTE_MODE_SELECT, moduleName, moduleVersion);
         final List<String> contentTemplates = getModuleResourcesByQuery(CONTENT_TEMPLATES_SELECT, moduleName, moduleVersion,
                 node -> String.format("%s : {%s}", node.getName(), node.getPropertyAsString("j:applyOn")));
-        List<String> customActions = getModuleActions(aPackage);
+        final List<String> customActions = getModuleActions(aPackage);
         final List<String> emptySpringFiles = getEmptySpringFiles(aPackage);
 
-        logger.info(String.format("moduleName=%s moduleVersion=%s org.jahia.modules=%s "
-                        + "nodeTypesMixin=%s serverSettingsPaths=%s siteSettingsPaths=%s "
-                        + "nodeTypesDate=%s contributeModePaths=%s useSpring=%s customActions=%s contentTemplates=%s emptySpringFiles=%s",
-                moduleName,
-                moduleVersion,
-                moduleGroupId.equalsIgnoreCase("org.jahia.modules"),
-                nodeTypesWithLegacyJmix.toString(),
-                serverSettingsPaths.toString(),
-                siteSettingsPaths.toString(),
-                nodeTypesWithDate.toString(),
-                contributeModePaths.toString(),
-                hasSpringBean,
-                customActions.toString(),
-                contentTemplates,
-                emptySpringFiles));
+        final ResultMessage resultMessage = new ResultMessage(moduleName, moduleVersion)
+                .trackData("org.jahia.modules", moduleGroupId.equalsIgnoreCase("org.jahia.modules"))
+                .trackData("jmix:cmContentTreeDisplayable", nodeTypesWithLegacyJmix)
+                .trackData("Types with content template", contentTemplates)
+                .trackData("serverSettings", serverSettingsPaths)
+                .trackData("siteSettings", siteSettingsPaths)
+                .trackData("contributeMode", contributeModePaths)
+                .trackData("DateFormat", nodeTypesWithDate)
+                .trackData("Spring", hasSpringBean)
+                .trackData("Spring Actions", customActions)
+                .trackData("Empty Spring Files", emptySpringFiles);
 
-        ResultMessage resultMessage = new ResultMessage(moduleName,
-                moduleVersion,
-                moduleGroupId.equalsIgnoreCase("org.jahia.modules"),
-                nodeTypesWithLegacyJmix.toString().replace(",",";"),
-                serverSettingsPaths.toString().replace(",",";"),
-                siteSettingsPaths.toString().replace(",",";"),
-                nodeTypesWithDate.toString().replace(",",";"),
-                contributeModePaths.toString().replace(",",";"),
-                hasSpringBean,
-                customActions.toString().replace(",",";"),
-                contentTemplates,
-                emptySpringFiles);
-
+        logger.info(resultMessage.toString());
         this.resultReport.add(resultMessage);
 
     }
