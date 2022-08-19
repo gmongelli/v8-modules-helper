@@ -72,7 +72,7 @@
             Back
         </button>
         <button id="export" class="btn btn-primary" type="submit" name="_eventId_export"
-                onclick="exportTableToCSV('members.csv')">Export Report to CSV
+                onclick="exportTableToCSV('migration-report.csv')">Export Report to CSV
         </button>
     </form:form>
 
