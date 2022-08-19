@@ -43,6 +43,8 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  *
@@ -147,21 +149,21 @@ public class ModulesMigrationHandler {
      * @param moduleVersion Module Version
      * @return Modules list
      */
-    private List<String> getModuleListByQuery(String querySelect, String moduleName, String moduleVersion) {
-        return getModuleListByQuery(querySelect, moduleName, moduleVersion, JCRNodeWrapper::getPath);
+    private List<String> getModuleResourcesByQuery(String querySelect, String moduleName, String moduleVersion) {
+        return getModuleResourcesByQuery(querySelect, moduleName, moduleVersion, JCRNodeWrapper::getPath);
     }
 
-    private List<String> getModuleListByQuery(String querySelect, String moduleName, String moduleVersion, Function<JCRNodeWrapper,String> transformer) {
-        List<String> modulesPathList = new ArrayList<String>();
+    private List<String> getModuleResourcesByQuery(String querySelect, String moduleName, String moduleVersion, Function<JCRNodeWrapper,String> transformer) {
+        final List<String> modulesPathList = new ArrayList<String>();
 
-        String modulePath = String.format(" ISDESCENDANTNODE ('/modules/%s/%s/templates/')",
+        final String modulePath = String.format(" ISDESCENDANTNODE ('/modules/%s/%s/templates/')",
                 moduleName, moduleVersion.replace(".SNAPSHOT", "-SNAPSHOT"));
 
         try {
-            JCRSessionWrapper jcrNodeWrapper = JCRSessionFactory.getInstance()
+            final JCRSessionWrapper jcrNodeWrapper = JCRSessionFactory.getInstance()
                     .getCurrentSystemSession(Constants.EDIT_WORKSPACE, null, null);
 
-            NodeIterator iterator = jcrNodeWrapper.getWorkspace().getQueryManager()
+            final NodeIterator iterator = jcrNodeWrapper.getWorkspace().getQueryManager()
                     .createQuery(querySelect + modulePath, Query.JCR_SQL2).execute().getNodes();
             if (iterator.hasNext()) {
                 final JCRNodeWrapper node = (JCRNodeWrapper) iterator.nextNode();
@@ -170,35 +172,17 @@ public class ModulesMigrationHandler {
 
         } catch (RepositoryException e) {
             logger.error(String.format("Cannot get JCR information from module %s/%s",
-                    moduleName, moduleVersion));
-            logger.error(e.toString());
+                    moduleName, moduleVersion), e);
         }
 
         return modulesPathList;
     }
 
-    /**
-     * Return a list of nodeTypes having a specific jmix as supertype
-     *
-     * @param nodeTypeIterator Node type iterator for a specific module
-     * @param jmix jMix name
-     * @return Modules list
-     */
-    private List<String> getNodeTypesWithJmix(NodeTypeRegistry.JahiaNodeTypeIterator nodeTypeIterator, String jmix) {
-        List<String> nodeTypeList = new ArrayList<String>();
-
-        for (ExtendedNodeType moduleNodeType : nodeTypeIterator) {
-            String nodeTypeName = moduleNodeType.getName();
-            String[] declaredSupertypeNamesList = moduleNodeType.getDeclaredSupertypeNames();
-            for (String supertypeName : declaredSupertypeNamesList) {
-
-                if (supertypeName.trim().equals(jmix)) {
-                    nodeTypeList.add(nodeTypeName);
-                }
-            }
-        }
-
-        return nodeTypeList;
+    private List<String> getNodeTypesWithMixin(String module, String mixin) {
+        return StreamSupport.stream(NodeTypeRegistry.getInstance().getNodeTypes(module).spliterator(), false)
+                .filter(nt -> nt.isNodeType(mixin))
+                .map(ExtendedNodeType::getName)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -305,13 +289,12 @@ public class ModulesMigrationHandler {
         }
 
         boolean hasSpringBean = isSpringContext(aPackage.getContext());
-        List<String> nodeTypesWithLegacyJmix = getNodeTypesWithJmix(
-                NodeTypeRegistry.getInstance().getNodeTypes(moduleName), "jmix:cmContentTreeDisplayable");
+        List<String> nodeTypesWithLegacyJmix = getNodeTypesWithMixin(moduleName, "jmix:cmContentTreeDisplayable");
         List<String> nodeTypesWithDate = getNodeTypesDateFormat(NodeTypeRegistry.getInstance().getNodeTypes(moduleName));
-        List<String> siteSettingsPaths = getModuleListByQuery(SITE_SELECT, moduleName, moduleVersion);
-        List<String> serverSettingsPaths = getModuleListByQuery(SERVER_SELECT, moduleName, moduleVersion);
-        List<String> contributeModePaths = getModuleListByQuery(CONTRIBUTE_MODE_SELECT, moduleName, moduleVersion);
-        final List<String> contentTemplates = getModuleListByQuery(CONTENT_TEMPLATES_SELECT, moduleName, moduleVersion,
+        List<String> siteSettingsPaths = getModuleResourcesByQuery(SITE_SELECT, moduleName, moduleVersion);
+        List<String> serverSettingsPaths = getModuleResourcesByQuery(SERVER_SELECT, moduleName, moduleVersion);
+        List<String> contributeModePaths = getModuleResourcesByQuery(CONTRIBUTE_MODE_SELECT, moduleName, moduleVersion);
+        final List<String> contentTemplates = getModuleResourcesByQuery(CONTENT_TEMPLATES_SELECT, moduleName, moduleVersion,
                 node -> String.format("%s : {%s}", node.getName(), node.getPropertyAsString("j:applyOn")));
         List<String> customActions = getModuleActions(aPackage);
 
