@@ -54,12 +54,12 @@ public class ModulesMigrationHandler {
             "https://store.jahia.com/en/sites/private-app-store/contents/modules-repository.moduleList.json";
 
     private static final String SITE_SELECT =
-            "SELECT * FROM [jnt:template] As template WHERE template.[j:view] = 'siteSettings' AND";
+            "SELECT * FROM [jnt:template] WHERE [j:view] = 'siteSettings' AND";
     private static final String SERVER_SELECT =
-            "SELECT * FROM [jnt:template] As template WHERE template.[j:view] = 'serverSettings' AND";
+            "SELECT * FROM [jnt:template] WHERE [j:view] = 'serverSettings' AND";
     private static final String CONTRIBUTE_MODE_SELECT =
-            "SELECT * FROM [jmix:contributeMode] As template WHERE";
-    private static final String CONTENT_TEMPLATES_SELECT = "select * from [jnt:contentTemplate] As template where ";
+            "SELECT * FROM [jmix:contributeMode] WHERE";
+    private static final String CONTENT_TEMPLATES_SELECT = "select * from [jnt:contentTemplate] where ";
 
     private static final Logger logger = LoggerFactory.getLogger(ModulesMigrationHandler.class);
     private static final String STORE_MODULES_LIST = "storeModulesList";
@@ -154,7 +154,7 @@ public class ModulesMigrationHandler {
     private List<String> getModuleListByQuery(String querySelect, String moduleName, String moduleVersion, Function<JCRNodeWrapper,String> transformer) {
         List<String> modulesPathList = new ArrayList<String>();
 
-        String modulePath = String.format(" ISDESCENDANTNODE (template, '/modules/%s/%s/templates/')",
+        String modulePath = String.format(" ISDESCENDANTNODE ('/modules/%s/%s/templates/')",
                 moduleName, moduleVersion.replace(".SNAPSHOT", "-SNAPSHOT"));
 
         try {
