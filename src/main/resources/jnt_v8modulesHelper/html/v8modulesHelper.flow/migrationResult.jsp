@@ -91,6 +91,7 @@
             <th>DateFormat</th>
             <th>Spring</th>
             <th>Spring Actions</th>
+            <th>Empty Spring Files</th>
         </tr>
         </thead>
         <c:forEach items="${migrationReport}" var="module">
@@ -106,6 +107,7 @@
                 <td>${module.nodeTypesDate}</td>
                 <td>${module.hasSpringBean}</td>
                 <td>${module.customActions}</td>
+                <td>${module.emptySpringFiles}</td>
             </tr>
         </c:forEach>
     </table>

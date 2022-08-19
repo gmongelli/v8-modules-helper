@@ -18,6 +18,7 @@ public class ResultMessage implements Serializable {
     boolean hasSpringBean;
     String customActions;
     String typesWithContentTemplate;
+    String emptySpringFiles;
 
     private static final long serialVersionUID = -6552128415414065542L;
 
@@ -34,7 +35,8 @@ public class ResultMessage implements Serializable {
                          String contributeMode,
                          boolean hasSpringBean,
                          String customActions,
-                         List<String> typesWithContentTemplate) {
+                         List<String> typesWithContentTemplate,
+                         List<String> emptySpringFiles) {
         this.moduleName = moduleName;
         this.moduleVersion = moduleVersion;
         this.jahiaGroup = jahiaGroup;
@@ -46,6 +48,7 @@ public class ResultMessage implements Serializable {
         this.hasSpringBean = hasSpringBean;
         this.customActions = customActions;
         this.typesWithContentTemplate = StringUtils.join(typesWithContentTemplate, ";");
+        this.emptySpringFiles = StringUtils.join(emptySpringFiles, ";");
     }
     public String getNodeTypesDate() { return nodeTypesDate; }
 
@@ -113,5 +116,9 @@ public class ResultMessage implements Serializable {
 
     public String getTypesWithContentTemplate() {
         return typesWithContentTemplate;
+    }
+
+    public String getEmptySpringFiles() {
+        return emptySpringFiles;
     }
 }

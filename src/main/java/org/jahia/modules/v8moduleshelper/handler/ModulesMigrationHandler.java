@@ -10,6 +10,7 @@ import org.jahia.api.Constants;
 import org.jahia.data.templates.JahiaTemplatesPackage;
 import org.jahia.modules.v8moduleshelper.model.EnvironmentInfo;
 import org.jahia.modules.v8moduleshelper.ResultMessage;
+import org.jahia.osgi.BundleResource;
 import org.jahia.registries.ServicesRegistry;
 import org.jahia.services.content.JCRCallback;
 import org.jahia.services.content.JCRNodeWrapper;
@@ -25,6 +26,7 @@ import org.jahia.services.templates.JahiaTemplateManagerService;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.osgi.framework.Bundle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.binding.message.MessageBuilder;
@@ -39,12 +41,22 @@ import javax.jcr.query.Query;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.Namespace;
+import org.jdom2.filter.Filters;
+import org.jdom2.input.SAXBuilder;
+import org.jdom2.xpath.XPathExpression;
+import org.jdom2.xpath.XPathFactory;
 
 /**
  *
@@ -269,6 +281,42 @@ public class ModulesMigrationHandler {
         return false;
     }
 
+    private List<String> getEmptySpringFiles(JahiaTemplatesPackage module) {
+        final Bundle bundle = module.getBundle();
+        final Enumeration<URL> entries = bundle.findEntries("META-INF/spring", "*.xml", false);
+        if (entries == null || !entries.hasMoreElements()) return Collections.emptyList();
+        return Collections.list(entries).stream()
+                .map(url -> new BundleResource(url, bundle))
+                .filter(bundleResource -> {
+                    InputStream inputStream = null;
+                    try {
+                        inputStream = bundleResource.getInputStream();
+                        final SAXBuilder saxBuilder = new SAXBuilder();
+                        saxBuilder.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+                        final Document document = saxBuilder.build(inputStream);
+                        if (!document.hasRootElement()) return true;
+                        final Element rootElement = document.getRootElement();
+                        if (!StringUtils.equalsIgnoreCase(rootElement.getName(), "beans")) return true;
+                        return rootElement.getChildren().size() == 0;
+                    } catch (IOException | JDOMException e) {
+                        logger.error("", e);
+                        return false;
+                    } finally {
+                        IOUtils.closeQuietly(inputStream);
+                    }
+                })
+                .map(bundleResource -> {
+                    try {
+                        return bundleResource.getURL().getPath();
+                    } catch (IOException e) {
+                        logger.error("", e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
     /**
      * Fill report for package that matches filter
      *
@@ -297,10 +345,11 @@ public class ModulesMigrationHandler {
         final List<String> contentTemplates = getModuleResourcesByQuery(CONTENT_TEMPLATES_SELECT, moduleName, moduleVersion,
                 node -> String.format("%s : {%s}", node.getName(), node.getPropertyAsString("j:applyOn")));
         List<String> customActions = getModuleActions(aPackage);
+        final List<String> emptySpringFiles = getEmptySpringFiles(aPackage);
 
         logger.info(String.format("moduleName=%s moduleVersion=%s org.jahia.modules=%s "
                         + "nodeTypesMixin=%s serverSettingsPaths=%s siteSettingsPaths=%s "
-                        + "nodeTypesDate=%s contributeModePaths=%s useSpring=%s customActions=%s contentTemplates=%s",
+                        + "nodeTypesDate=%s contributeModePaths=%s useSpring=%s customActions=%s contentTemplates=%s emptySpringFiles=%s",
                 moduleName,
                 moduleVersion,
                 moduleGroupId.equalsIgnoreCase("org.jahia.modules"),
@@ -311,7 +360,8 @@ public class ModulesMigrationHandler {
                 contributeModePaths.toString(),
                 hasSpringBean,
                 customActions.toString(),
-                contentTemplates));
+                contentTemplates,
+                emptySpringFiles));
 
         ResultMessage resultMessage = new ResultMessage(moduleName,
                 moduleVersion,
@@ -323,7 +373,8 @@ public class ModulesMigrationHandler {
                 contributeModePaths.toString().replace(",",";"),
                 hasSpringBean,
                 customActions.toString().replace(",",";"),
-                contentTemplates);
+                contentTemplates,
+                emptySpringFiles);
 
         this.resultReport.add(resultMessage);
 
