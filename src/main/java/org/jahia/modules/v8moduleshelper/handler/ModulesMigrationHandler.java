@@ -257,19 +257,16 @@ public class ModulesMigrationHandler {
         return actionsList;
     }
 
-    /**
-     * Indicates if the context uses Spring
-     *
-     * @param bundleContext Context of bundle
-     * @return true if is Spring; false otherwise
-     */
-    private boolean isSpringContext(AbstractApplicationContext bundleContext) {
-        if (bundleContext == null) {
+    private boolean isSpringContext(JahiaTemplatesPackage module) {
+        final AbstractApplicationContext springContext = module.getContext();
+        if (springContext == null) {
+            if (logger.isDebugEnabled())
+                logger.debug(String.format("No Spring context for %s", module));
             return false;
         }
 
-        if (bundleContext.getDisplayName() != null) {
-            String[] beanDefinitionNames = bundleContext.getBeanDefinitionNames();
+        if (springContext.getDisplayName() != null) {
+            String[] beanDefinitionNames = springContext.getBeanDefinitionNames();
 
             for (String beanDefinitionName : beanDefinitionNames) {
                 if (beanDefinitionName.contains("springframework")) {
@@ -336,7 +333,7 @@ public class ModulesMigrationHandler {
             return;
         }
 
-        final boolean hasSpringBean = isSpringContext(aPackage.getContext());
+        final boolean hasSpringBean = isSpringContext(aPackage);
         final List<String> nodeTypesWithLegacyJmix = getNodeTypesWithMixin(moduleName, "jmix:cmContentTreeDisplayable");
         final List<String> nodeTypesWithDate = getNodeTypesDateFormat(NodeTypeRegistry.getInstance().getNodeTypes(moduleName));
         final List<String> siteSettingsPaths = getModuleResourcesByQuery(SITE_SELECT, moduleName, moduleVersion);
@@ -442,7 +439,7 @@ public class ModulesMigrationHandler {
         final String json = httpClientService.executeGet(JAHIA_STORE_URL, headers);
         if (StringUtils.isNotBlank(json)) {
             try {
-                final JSONArray modulesList = new JSONArray(json).getJSONObject(0).getJSONArray("modules");
+                final JSONArray modulesList = new JSONArray(json);
                 writeModulesListInTheJCR(modulesList);
                 return modulesList;
             } catch (JSONException e) {
