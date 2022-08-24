@@ -436,7 +436,7 @@ public class ModulesMigrationHandler {
         initClient();
         final Map<String, String> headers = new HashMap<>();
         headers.put("accept", "application/json");
-        final String json = httpClientService.executeGet(JAHIA_STORE_URL, headers);
+        final String json = httpClientService.executeGet(JAHIA_STORE_URL.concat(System.getProperties().contains("v8migrationhelpertest") ? "dummmy" : ""), headers);
         if (StringUtils.isNotBlank(json)) {
             try {
                 final JSONArray modulesList = new JSONArray(json);
