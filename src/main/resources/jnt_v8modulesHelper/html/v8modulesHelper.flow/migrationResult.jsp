@@ -7,11 +7,8 @@
 
 <script type="text/javascript">
     function downloadCSV(csv, filename) {
-        var csvFile;
-        var downloadLink;
-
-        csvFile = new Blob([csv], {type: "text/csv"});
-        downloadLink = document.createElement("a");
+        const csvFile = new Blob([csv], {type: "text/csv"});
+        const downloadLink = document.createElement("a");
         downloadLink.download = filename;
         downloadLink.href = window.URL.createObjectURL(csvFile);
         downloadLink.style.display = "none";
@@ -20,13 +17,13 @@
     }
 
     function exportTableToCSV(filename) {
-        var csv = [];
-        var rows = document.querySelectorAll("table tr");
+        const csv = [];
+        const rows = document.querySelectorAll("table tr");
 
-        for (var i = 0; i < rows.length; i++) {
-            var row = [], cols = rows[i].querySelectorAll("td, th");
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll("td, th");
 
-            for (var j = 0; j < cols.length; j++) {
+            for (let j = 0; j < cols.length; j++) {
                 const span = cols[j].querySelector("span")
                 const text = span === null ? cols[j].innerText : span.innerText;
                 row.push("\"" + text.replace("\"", "\"\"") + "\"");
