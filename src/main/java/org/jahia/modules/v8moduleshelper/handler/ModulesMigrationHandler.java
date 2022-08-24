@@ -172,12 +172,12 @@ public class ModulesMigrationHandler {
                 moduleName, moduleVersion.replace(".SNAPSHOT", "-SNAPSHOT"));
 
         try {
-            final JCRSessionWrapper jcrNodeWrapper = JCRSessionFactory.getInstance()
+            final JCRSessionWrapper session = JCRSessionFactory.getInstance()
                     .getCurrentSystemSession(Constants.EDIT_WORKSPACE, null, null);
 
-            final NodeIterator iterator = jcrNodeWrapper.getWorkspace().getQueryManager()
+            final NodeIterator iterator = session.getWorkspace().getQueryManager()
                     .createQuery(querySelect + modulePath, Query.JCR_SQL2).execute().getNodes();
-            if (iterator.hasNext()) {
+            while (iterator.hasNext()) {
                 final JCRNodeWrapper node = (JCRNodeWrapper) iterator.nextNode();
                 modulesPathList.add(transformer.apply(node));
             }
