@@ -26,8 +26,11 @@
         for (var i = 0; i < rows.length; i++) {
             var row = [], cols = rows[i].querySelectorAll("td, th");
 
-            for (var j = 0; j < cols.length; j++)
-                row.push("\"" + cols[j].innerText.replace("\"", "\"\"") + "\"");
+            for (var j = 0; j < cols.length; j++) {
+                const span = cols[j].querySelector("span")
+                const text = span === null ? cols[j].innerText : span.innerText;
+                row.push("\"" + text.replace("\"", "\"\"") + "\"");
+            }
 
             csv.push(row.join(","));
         }
@@ -92,7 +95,7 @@
             <tr>
                 <td>${module.moduleName}/${module.moduleVersion}</td>
                 <c:forEach items="${module.allData}" var="value">
-                    <td>${value}</td>
+                    <td><span title="toto">${value}</span></td>
                 </c:forEach>
             </tr>
         </c:forEach>
