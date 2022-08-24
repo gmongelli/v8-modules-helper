@@ -27,7 +27,7 @@
             var row = [], cols = rows[i].querySelectorAll("td, th");
 
             for (var j = 0; j < cols.length; j++)
-                row.push(cols[j].innerText);
+                row.push("\"" + cols[j].innerText.replace("\"", "\"\"") + "\"");
 
             csv.push(row.join(","));
         }
@@ -92,7 +92,7 @@
             <tr>
                 <td>${module.moduleName}/${module.moduleVersion}</td>
                 <c:forEach items="${module.allData}" var="value">
-                    <td>${fn:replace(value, ',', ';')}</td>
+                    <td>${value}</td>
                 </c:forEach>
             </tr>
         </c:forEach>
