@@ -8,10 +8,10 @@ import java.io.Serializable;
 public class EnvironmentInfo implements Serializable {
     private static final long serialVersionUID = 29383204L;
 
-    private boolean srcRemoveStore;
-    private boolean srcStartedOnly;
-    private boolean srcRemoveJahia;
-    private boolean srcAddSystemModules;
+    private boolean srcRemoveStore = true;
+    private boolean srcStartedOnly = true;
+    private boolean srcRemoveJahia = true;
+    private boolean srcAddSystemModules = true;
 
     public boolean isSrcRemoveStore() {
         return srcRemoveStore;
