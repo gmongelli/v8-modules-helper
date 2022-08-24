@@ -78,7 +78,7 @@ public class ModulesMigrationHandler {
     private static final String STORE_MODULES_LIST_ERROR_MESSAGE = "Cannot load information from Jahia Store. Please consider including Jahia modules in the report";
     private static final String JCR_FOLDER = "v8-migration";
     private static final String SYSTEMSITE_FILES_PATH = "/sites/systemsite/files";
-    private static final String MODULES_LIST_FILENAME = "modules-list.json";
+    private static final String MODULES_LIST_FILENAME = "modules-repository.moduleList.json";
     private static final String MODULES_LIST_FILE_PATH = SYSTEMSITE_FILES_PATH + "/" + JCR_FOLDER + "/" + MODULES_LIST_FILENAME;
     private static final String TITLE_BR = "&#10;";
     private static final String DESC_GRP_ID_ERROR = "The group ID must be changed" + TITLE_BR + "(unless the module is developed by Jahia)";
