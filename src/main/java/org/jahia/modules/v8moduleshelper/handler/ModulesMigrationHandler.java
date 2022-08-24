@@ -8,8 +8,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jahia.api.Constants;
 import org.jahia.data.templates.JahiaTemplatesPackage;
+import org.jahia.modules.v8moduleshelper.Report;
 import org.jahia.modules.v8moduleshelper.model.EnvironmentInfo;
-import org.jahia.modules.v8moduleshelper.ResultMessage;
+import org.jahia.modules.v8moduleshelper.ModuleReport;
 import org.jahia.osgi.BundleResource;
 import org.jahia.registries.ServicesRegistry;
 import org.jahia.services.content.JCRCallback;
@@ -52,11 +53,7 @@ import java.util.stream.StreamSupport;
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
-import org.jdom2.Namespace;
-import org.jdom2.filter.Filters;
 import org.jdom2.input.SAXBuilder;
-import org.jdom2.xpath.XPathExpression;
-import org.jdom2.xpath.XPathFactory;
 
 /**
  *
@@ -83,7 +80,10 @@ public class ModulesMigrationHandler {
     private static final String SYSTEMSITE_FILES_PATH = "/sites/systemsite/files";
     private static final String MODULES_LIST_FILENAME = "modules-list.json";
     private static final String MODULES_LIST_FILE_PATH = SYSTEMSITE_FILES_PATH + "/" + JCR_FOLDER + "/" + MODULES_LIST_FILENAME;
-    private List<ResultMessage> resultReport = new ArrayList<>();
+    private static final String TITLE_BR = "&#10;";
+    private static final String DESC_GRP_ID_ERROR = "The group ID must be changed" + TITLE_BR + "(unless the module is developed by Jahia)";
+
+    private final Report report = new Report();
     private StringBuilder errorMessage = new StringBuilder();
     private HttpClientService httpClientService;
     private List<String> jahiaStoreModules = new ArrayList<>();
@@ -333,6 +333,7 @@ public class ModulesMigrationHandler {
             return;
         }
 
+        final boolean usesJahiaGroupID = moduleGroupId.equalsIgnoreCase("org.jahia.modules");
         final boolean hasSpringBean = isSpringContext(aPackage);
         final List<String> nodeTypesWithLegacyJmix = getNodeTypesWithMixin(moduleName, "jmix:cmContentTreeDisplayable");
         final List<String> nodeTypesWithDate = getNodeTypesDateFormat(NodeTypeRegistry.getInstance().getNodeTypes(moduleName));
@@ -344,20 +345,20 @@ public class ModulesMigrationHandler {
         final List<String> customActions = getModuleActions(aPackage);
         final List<String> emptySpringFiles = getEmptySpringFiles(aPackage);
 
-        final ResultMessage resultMessage = new ResultMessage(moduleName, moduleVersion)
-                .trackData("org.jahia.modules", moduleGroupId.equalsIgnoreCase("org.jahia.modules"))
-                .trackData("jmix:cmContentTreeDisplayable", nodeTypesWithLegacyJmix)
-                .trackData("Types with content template", contentTemplates)
-                .trackData("serverSettings", serverSettingsPaths)
-                .trackData("siteSettings", siteSettingsPaths)
-                .trackData("contributeMode", contributeModePaths)
-                .trackData("DateFormat", nodeTypesWithDate)
-                .trackData("Spring", hasSpringBean)
-                .trackData("Spring Actions", customActions)
-                .trackData("Empty Spring Files", emptySpringFiles);
+        final ModuleReport moduleReport = new ModuleReport(moduleName, moduleVersion)
+                .trackData("org.jahia.modules", usesJahiaGroupID, usesJahiaGroupID ? DESC_GRP_ID_ERROR : StringUtils.EMPTY)
+                .trackData("jmix:cmContentTreeDisplayable", nodeTypesWithLegacyJmix, null)
+                .trackData("Types with content template", contentTemplates, null)
+                .trackData("serverSettings", serverSettingsPaths, null)
+                .trackData("siteSettings", siteSettingsPaths, null)
+                .trackData("contributeMode", contributeModePaths, null)
+                .trackData("DateFormat", nodeTypesWithDate, null)
+                .trackData("Spring", hasSpringBean, null)
+                .trackData("Spring Actions", customActions, null)
+                .trackData("Empty Spring Files", emptySpringFiles, null);
 
-        logger.info(resultMessage.toString());
-        this.resultReport.add(resultMessage);
+        logger.info(moduleReport.toString());
+        this.report.add(moduleReport);
 
     }
 
@@ -384,7 +385,7 @@ public class ModulesMigrationHandler {
         this.actionsMap.remove("default");
         this.actionsMap.remove("webflow");
 
-        resultReport.clear();
+        report.clear();
         jahiaStoreModules.clear();
 
         if (removeStore == true) {
@@ -409,7 +410,7 @@ public class ModulesMigrationHandler {
                     .defaultText("An error encountered: " + this.errorMessage).build());
             return false;
         } else {
-            context.getFlowScope().put("migrationReport", this.resultReport);
+            context.getFlowScope().put("migrationReport", this.report);
         }
 
         logger.info("Finishing modules report");

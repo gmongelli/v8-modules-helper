@@ -3,50 +3,44 @@ package org.jahia.modules.v8moduleshelper;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class ResultMessage implements Serializable {
+public class ModuleReport implements Serializable {
 
     String moduleName;
     String moduleVersion;
-    Map<String, String> data;
+    Map<String, String> data, descriptions;
 
     private static final long serialVersionUID = -6552128415414065542L;
 
-    public ResultMessage(String moduleName, String moduleVersion) {
+    public ModuleReport(String moduleName, String moduleVersion) {
         this.moduleName = moduleName;
         this.moduleVersion = moduleVersion;
         data = new LinkedHashMap<>();
+        descriptions = new HashMap<>();
     }
 
-    public ResultMessage trackData(String label, String value) {
+    public ModuleReport trackData(String label, String value, String description) {
         data.put(label, value);
+        descriptions.put(label, StringUtils.defaultIfBlank(description, StringUtils.EMPTY));
         return this;
     }
 
-    public ResultMessage trackData(String label, boolean value) {
-        return trackData(label, String.valueOf(value));
+    public ModuleReport trackData(String label, boolean value, String description) {
+        return trackData(label, String.valueOf(value), description);
     }
 
-    public ResultMessage trackData(String label, Collection<String> value) {
-        return trackData(label, StringUtils.join(value, ";"));
+    public ModuleReport trackData(String label, Collection<String> value, String description) {
+        return trackData(label, StringUtils.join(value, ";"), description);
     }
 
     public Set<String> getDataKeys() {
         return new LinkedHashSet<>(data.keySet());
-    }
-
-    public String getData(String key) {
-        return data.get(key);
-    }
-
-    public Collection<String> getAllData() {
-        return new ArrayList<>(data.values());
     }
 
     public String getModuleName() {
@@ -55,6 +49,14 @@ public class ResultMessage implements Serializable {
 
     public String getModuleVersion() {
         return moduleVersion;
+    }
+
+    public Map<String, String> getData() {
+        return data;
+    }
+
+    public Map<String, String> getDescriptions() {
+        return descriptions;
     }
 
     @Override

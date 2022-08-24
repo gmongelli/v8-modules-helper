@@ -36,6 +36,8 @@
     }
 </script>
 
+<c:set var="doubleQuote">"</c:set>
+<c:set var="singleQuote">'</c:set>
 <c:if test="${environmentInfo.srcStartedOnly == 'true'
             || environmentInfo.srcRemoveStore == 'true'
             || environmentInfo.srcAddSystemModules == 'true'
@@ -82,17 +84,18 @@
         <thead>
         <tr>
             <th>Name</th>
-            <c:forEach items="${migrationReport[0].dataKeys}" var="label">
+            <%--@elvariable id="migrationReport" type="org.jahia.modules.v8moduleshelper.Report"--%>
+            <c:forEach items="${migrationReport.entries}" var="label">
                 <th>${label}</th>
             </c:forEach>
         </tr>
         </thead>
-        <c:forEach items="${migrationReport}" var="module">
-            <%--@elvariable id="module" type="org.jahia.modules.v8moduleshelper.ResultMessage"--%>
+        <c:forEach items="${migrationReport.moduleReports}" var="module">
+            <%--@elvariable id="module" type="org.jahia.modules.v8moduleshelper.ModuleReport"--%>
             <tr>
                 <td>${module.moduleName}/${module.moduleVersion}</td>
-                <c:forEach items="${module.allData}" var="value">
-                    <td><span title="toto">${value}</span></td>
+                <c:forEach items="${migrationReport.entries}" var="col">
+                    <td><span title="${fn:replace(module.descriptions[col], doubleQuote, singleQuote)}">${module.data[col]}</span></td>
                 </c:forEach>
             </tr>
         </c:forEach>
