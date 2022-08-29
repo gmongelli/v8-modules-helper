@@ -82,6 +82,15 @@ public class ModulesMigrationHandler {
     private static final String MODULES_LIST_FILE_PATH = SYSTEMSITE_FILES_PATH + "/" + JCR_FOLDER + "/" + MODULES_LIST_FILENAME;
     private static final String TITLE_BR = "&#10;";
     private static final String DESC_GRP_ID_ERROR = "The group ID must be changed" + TITLE_BR + "(unless the module is developed by Jahia)";
+    private static final String DESC_CM_CONTENT_TREE_DISPLAYABLE = "If you were using the jmix:cmContentTreeDisplayablemixin to display your content type in Content and Media Manager tree as a content folder, then you need to use jmix:visibleInContentTree instead";
+    private static final String DESC_TYPES_WITH_CTNT_TPLT = "Add jmix:mainResource to the content types that can be displayed in full page";
+    private static final String DESC_HAS_SERVER_SETTINGS = "Navigation updates in Jahia 8 change where Site Settings and Server Settings can display. Now you must explicitly declare the location of your custom Site Settings, Server Settings, and User Dashboard panels";
+    private static final String DESC_HAS_SITE_SETTINGS = DESC_HAS_SERVER_SETTINGS;
+    private static final String DESC_CONTRIBUTE_MODE_CONF = "The contribute mode has been removed, and related configuration has to be reviewed";
+    private static final String DESC_USES_DATE_FMT = "Date format in CND files is not supported anymore";
+    private static final String DESC_HAS_SPRING_BEANS = "The module declares some Spring beans, and need to be configured to have a Spring context";
+    private static final String DESC_HAS_SPRING_ACTIONS = "The module registers some custom actions as Spring beans, they should be rewritten to be registered as some OSGi services";
+    private static final String DESC_HAS_EMPTY_SPRING_FILES = "The module embeds some empty Spring files";
 
     private final Report report = new Report();
     private StringBuilder errorMessage = new StringBuilder();
@@ -346,16 +355,16 @@ public class ModulesMigrationHandler {
         final List<String> emptySpringFiles = getEmptySpringFiles(aPackage);
 
         final ModuleReport moduleReport = new ModuleReport(moduleName, moduleVersion)
-                .trackData("org.jahia.modules", usesJahiaGroupID, usesJahiaGroupID ? DESC_GRP_ID_ERROR : StringUtils.EMPTY)
-                .trackData("jmix:cmContentTreeDisplayable", nodeTypesWithLegacyJmix, null)
-                .trackData("Types with content template", contentTemplates, null)
-                .trackData("serverSettings", serverSettingsPaths, null)
-                .trackData("siteSettings", siteSettingsPaths, null)
-                .trackData("contributeMode", contributeModePaths, null)
-                .trackData("DateFormat", nodeTypesWithDate, null)
-                .trackData("Spring", hasSpringBean, null)
-                .trackData("Spring Actions", customActions, null)
-                .trackData("Empty Spring Files", emptySpringFiles, null);
+                .trackData("org.jahia.modules", usesJahiaGroupID, DESC_GRP_ID_ERROR)
+                .trackData("jmix:cmContentTreeDisplayable", nodeTypesWithLegacyJmix, DESC_CM_CONTENT_TREE_DISPLAYABLE)
+                .trackData("Types with content template", contentTemplates, DESC_TYPES_WITH_CTNT_TPLT)
+                .trackData("serverSettings", serverSettingsPaths, DESC_HAS_SERVER_SETTINGS)
+                .trackData("siteSettings", siteSettingsPaths, DESC_HAS_SITE_SETTINGS)
+                .trackData("contributeMode", contributeModePaths, DESC_CONTRIBUTE_MODE_CONF)
+                .trackData("DateFormat", nodeTypesWithDate, DESC_USES_DATE_FMT)
+                .trackData("Spring", hasSpringBean, DESC_HAS_SPRING_BEANS)
+                .trackData("Spring Actions", customActions, DESC_HAS_SPRING_ACTIONS)
+                .trackData("Empty Spring Files", emptySpringFiles, DESC_HAS_EMPTY_SPRING_FILES);
 
         logger.info(moduleReport.toString());
         this.report.add(moduleReport);

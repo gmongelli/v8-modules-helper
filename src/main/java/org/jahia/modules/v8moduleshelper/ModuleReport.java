@@ -11,6 +11,9 @@ import java.util.Map;
 import java.util.Set;
 
 public class ModuleReport implements Serializable {
+    // TODO declare constants class (this one is declared twice)
+    private static final String TITLE_BR = "&#10;";
+    private static final String TITLE_BR_X2 = TITLE_BR + TITLE_BR;
 
     String moduleName;
     String moduleVersion;
@@ -32,11 +35,17 @@ public class ModuleReport implements Serializable {
     }
 
     public ModuleReport trackData(String label, boolean value, String description) {
-        return trackData(label, String.valueOf(value), description);
+        return trackData(label, String.valueOf(value), value ? description : null);
     }
 
     public ModuleReport trackData(String label, Collection<String> value, String description) {
-        return trackData(label, StringUtils.join(value, ";"), description);
+        final String tooltip = StringUtils.isNotBlank(description) && !StringUtils.endsWith(description, TITLE_BR) ?
+                description.concat(TITLE_BR_X2) :
+                description;
+
+        return trackData(label,
+                StringUtils.join(value, ";"),
+                StringUtils.defaultIfBlank(tooltip, StringUtils.EMPTY).concat(StringUtils.defaultIfBlank(StringUtils.join(value, TITLE_BR), StringUtils.EMPTY)));
     }
 
     public Set<String> getDataKeys() {
