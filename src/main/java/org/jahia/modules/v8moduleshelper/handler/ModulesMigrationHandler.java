@@ -82,7 +82,7 @@ public class ModulesMigrationHandler {
     private static final String MODULES_LIST_FILE_PATH = SYSTEMSITE_FILES_PATH + "/" + JCR_FOLDER + "/" + MODULES_LIST_FILENAME;
     private static final String TITLE_BR = "&#10;";
     private static final String DESC_GRP_ID_ERROR = "The group ID must be changed" + TITLE_BR + "(unless the module is developed by Jahia)";
-    private static final String DESC_CM_CONTENT_TREE_DISPLAYABLE = "If you were using the jmix:cmContentTreeDisplayablemixin to display your content type in Content and Media Manager tree as a content folder, then you need to use jmix:visibleInContentTree instead";
+    private static final String DESC_CM_CONTENT_TREE_DISPLAYABLE = "If you were using the jmix:cmContentTreeDisplayable mixin to display your content type in Content and Media Manager tree as a content folder, then you need to use jmix:visibleInContentTree instead";
     private static final String DESC_TYPES_WITH_CTNT_TPLT = "Add jmix:mainResource to the content types that can be displayed in full page";
     private static final String DESC_HAS_SERVER_SETTINGS = "Navigation updates in Jahia 8 change where Site Settings and Server Settings can display. Now you must explicitly declare the location of your custom Site Settings, Server Settings, and User Dashboard panels";
     private static final String DESC_HAS_SITE_SETTINGS = DESC_HAS_SERVER_SETTINGS;
@@ -203,6 +203,7 @@ public class ModulesMigrationHandler {
         return StreamSupport.stream(NodeTypeRegistry.getInstance().getNodeTypes(module).spliterator(), false)
                 .filter(nt -> nt.isNodeType(mixin))
                 .map(ExtendedNodeType::getName)
+                .filter(n -> !Objects.equals(n, mixin))
                 .collect(Collectors.toList());
     }
 
@@ -344,7 +345,7 @@ public class ModulesMigrationHandler {
 
         final boolean usesJahiaGroupID = moduleGroupId.equalsIgnoreCase("org.jahia.modules");
         final boolean hasSpringBean = isSpringContext(aPackage);
-        final List<String> nodeTypesWithLegacyJmix = getNodeTypesWithMixin(moduleName, "jmix:cmContentTreeDisplayable");
+        final List<String> nodeTypesWithcmContentTreeDisplayable = getNodeTypesWithMixin(moduleName, "jmix:cmContentTreeDisplayable");
         final List<String> nodeTypesWithDate = getNodeTypesDateFormat(NodeTypeRegistry.getInstance().getNodeTypes(moduleName));
         final List<String> siteSettingsPaths = getModuleResourcesByQuery(SITE_SELECT, moduleName, moduleVersion);
         final List<String> serverSettingsPaths = getModuleResourcesByQuery(SERVER_SELECT, moduleName, moduleVersion);
@@ -356,7 +357,7 @@ public class ModulesMigrationHandler {
 
         final ModuleReport moduleReport = new ModuleReport(moduleName, moduleVersion)
                 .trackData("org.jahia.modules", usesJahiaGroupID, DESC_GRP_ID_ERROR)
-                .trackData("jmix:cmContentTreeDisplayable", nodeTypesWithLegacyJmix, DESC_CM_CONTENT_TREE_DISPLAYABLE)
+                .trackData("jmix:cmContentTreeDisplayable", nodeTypesWithcmContentTreeDisplayable, DESC_CM_CONTENT_TREE_DISPLAYABLE)
                 .trackData("Types with content template", contentTemplates, DESC_TYPES_WITH_CTNT_TPLT)
                 .trackData("serverSettings", serverSettingsPaths, DESC_HAS_SERVER_SETTINGS)
                 .trackData("siteSettings", siteSettingsPaths, DESC_HAS_SITE_SETTINGS)
