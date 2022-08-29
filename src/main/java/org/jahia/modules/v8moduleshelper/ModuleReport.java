@@ -1,6 +1,8 @@
 package org.jahia.modules.v8moduleshelper;
 
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -11,6 +13,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class ModuleReport implements Serializable {
+    private static final Logger logger = LoggerFactory.getLogger(ModuleReport.class);
+
     // TODO declare constants class (this one is declared twice)
     private static final String TITLE_BR = "&#10;";
     private static final String TITLE_BR_X2 = TITLE_BR + TITLE_BR;
