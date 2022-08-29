@@ -55,6 +55,8 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
+import static api.Constants.TITLE_BR;
+
 /**
  *
  * Class responsible to run the report and export results to webflow
@@ -80,7 +82,6 @@ public class ModulesMigrationHandler {
     private static final String SYSTEMSITE_FILES_PATH = "/sites/systemsite/files";
     private static final String MODULES_LIST_FILENAME = "modules-repository.moduleList.json";
     private static final String MODULES_LIST_FILE_PATH = SYSTEMSITE_FILES_PATH + "/" + JCR_FOLDER + "/" + MODULES_LIST_FILENAME;
-    private static final String TITLE_BR = "&#10;";
     private static final String DESC_GRP_ID_ERROR = "The group ID must be changed" + TITLE_BR + "(unless the module is developed by Jahia)";
     private static final String DESC_CM_CONTENT_TREE_DISPLAYABLE = "If you were using the jmix:cmContentTreeDisplayable mixin to display your content type in Content and Media Manager tree as a content folder, then you need to use jmix:visibleInContentTree instead";
     private static final String DESC_TYPES_WITH_CTNT_TPLT = "Add jmix:mainResource to the content types that can be displayed in full page";

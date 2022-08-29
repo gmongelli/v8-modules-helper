@@ -12,12 +12,11 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import static api.Constants.TITLE_BR;
+import static api.Constants.TITLE_BR_X2;
+
 public class ModuleReport implements Serializable {
     private static final Logger logger = LoggerFactory.getLogger(ModuleReport.class);
-
-    // TODO declare constants class (this one is declared twice)
-    private static final String TITLE_BR = "&#10;";
-    private static final String TITLE_BR_X2 = TITLE_BR + TITLE_BR;
 
     String moduleName;
     String moduleVersion;
