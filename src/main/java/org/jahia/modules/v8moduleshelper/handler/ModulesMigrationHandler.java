@@ -91,6 +91,7 @@ public class ModulesMigrationHandler {
     private static final String DESC_HAS_SPRING_BEANS = "The module declares some Spring beans, and need to be configured to have a Spring context";
     private static final String DESC_HAS_SPRING_ACTIONS = "The module registers some custom actions as Spring beans, they should be rewritten to be registered as some OSGi services";
     private static final String DESC_HAS_EMPTY_SPRING_FILES = "The module embeds some empty Spring files";
+    private static final String DATE_FORMAT_OPTION_NAME = "format";
 
     private final Report report = new Report();
     private StringBuilder errorMessage = new StringBuilder();
@@ -213,31 +214,23 @@ public class ModulesMigrationHandler {
      * @param nodeTypeIterator Node type iterator for a specific module
      * @return Modules list
      */
-    private List<String> getNodeTypesDateFormat(NodeTypeRegistry.JahiaNodeTypeIterator nodeTypeIterator) {
-        List<String> nodeTypeList = new ArrayList<String>();
+    private Set<String> getNodeTypesDateFormat(NodeTypeRegistry.JahiaNodeTypeIterator nodeTypeIterator) {
+        final Set<String> properties = new TreeSet<>();
 
         for (ExtendedNodeType moduleNodeType : nodeTypeIterator) {
-            String nodeTypeName = moduleNodeType.getName();
-            ExtendedPropertyDefinition[] allPropertyDefinitions = moduleNodeType.getPropertyDefinitions();
+            final String nodeTypeName = moduleNodeType.getName();
+            final ExtendedPropertyDefinition[] allPropertyDefinitions = moduleNodeType.getPropertyDefinitions();
 
             for (ExtendedPropertyDefinition propertyDefinition : allPropertyDefinitions) {
-                String formatValue = propertyDefinition.getSelectorOptions().get("format");
+                final String formatValue = propertyDefinition.getSelectorOptions().get(DATE_FORMAT_OPTION_NAME);
 
                 if (formatValue != null) {
-                    try {
-                        SimpleDateFormat temp = new SimpleDateFormat(formatValue);
-
-                        if (nodeTypeList.contains(nodeTypeName) == false) {
-                            nodeTypeList.add(nodeTypeName);
-                        }
-                    } catch (Exception e) {
-                        logger.debug(String.format("Pattern %s is not a Date", formatValue));
-                    }
+                    properties.add(String.format("%s - %s", nodeTypeName, propertyDefinition.getName()));
                 }
             }
         }
 
-        return nodeTypeList;
+        return properties;
     }
 
     /**
@@ -346,7 +339,7 @@ public class ModulesMigrationHandler {
         final boolean usesJahiaGroupID = moduleGroupId.equalsIgnoreCase("org.jahia.modules");
         final boolean hasSpringBean = isSpringContext(aPackage);
         final List<String> nodeTypesWithcmContentTreeDisplayable = getNodeTypesWithMixin(moduleName, "jmix:cmContentTreeDisplayable");
-        final List<String> nodeTypesWithDate = getNodeTypesDateFormat(NodeTypeRegistry.getInstance().getNodeTypes(moduleName));
+        final Set<String> nodeTypesWithDate = getNodeTypesDateFormat(NodeTypeRegistry.getInstance().getNodeTypes(moduleName));
         final List<String> siteSettingsPaths = getModuleResourcesByQuery(SITE_SELECT, moduleName, moduleVersion);
         final List<String> serverSettingsPaths = getModuleResourcesByQuery(SERVER_SELECT, moduleName, moduleVersion);
         final List<String> contributeModePaths = getModuleResourcesByQuery(CONTRIBUTE_MODE_SELECT, moduleName, moduleVersion);
