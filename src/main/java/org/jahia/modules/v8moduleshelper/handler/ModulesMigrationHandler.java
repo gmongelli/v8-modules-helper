@@ -45,7 +45,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -89,21 +88,19 @@ public class ModulesMigrationHandler {
     private static final String DESC_HAS_SITE_SETTINGS = DESC_HAS_SERVER_SETTINGS;
     private static final String DESC_CONTRIBUTE_MODE_CONF = "The contribute mode has been removed, and related configuration has to be reviewed";
     private static final String DESC_USES_DATE_FMT = "Date format in CND files is not supported anymore";
-    private static final String DESC_HAS_SPRING_BEANS = "The module declares some Spring beans, and need to be configured to have a Spring context";
+    private static final String DESC_HAS_SPRING_BEANS = "The module declares some Spring beans and needs to be configured to have a Spring context";
     private static final String DESC_HAS_SPRING_ACTIONS = "The module registers some custom actions as Spring beans, they should be rewritten to be registered as some OSGi services";
     private static final String DESC_HAS_EMPTY_SPRING_FILES = "The module embeds some empty Spring files";
     private static final String DATE_FORMAT_OPTION_NAME = "format";
+    public static final String RESERVED_NAMESPACE = "org.jahia.modules";
 
     private final Report report = new Report();
-    private StringBuilder errorMessage = new StringBuilder();
+    private final StringBuilder errorMessage = new StringBuilder();
     private HttpClientService httpClientService;
-    private List<String> jahiaStoreModules = new ArrayList<>();
+    private final List<String> jahiaStoreModules = new ArrayList<>();
     private Map<String, Action> actionsMap;
 
-    private static boolean removeStore = false;
-    private static boolean removeJahiaGit = false;
-    private static boolean onlyStarted = false;
-    private static boolean addSystem = false;
+    private boolean removeJahiaGit = false;
 
     private void initClient() {
 
@@ -154,7 +151,7 @@ public class ModulesMigrationHandler {
                 final String moduleName = moduleObject.getString("name");
                 final String groupId = moduleObject.getString("groupId");
 
-                if (StringUtils.equalsIgnoreCase(groupId, "org.jahia.modules")) {
+                if (StringUtils.equalsIgnoreCase(groupId, RESERVED_NAMESPACE)) {
                     jahiaStoreModules.add(moduleName.toLowerCase());
                 }
             }
@@ -177,7 +174,7 @@ public class ModulesMigrationHandler {
     }
 
     private List<String> getModuleResourcesByQuery(String querySelect, String moduleName, String moduleVersion, Function<JCRNodeWrapper,String> transformer) {
-        final List<String> modulesPathList = new ArrayList<String>();
+        final List<String> modulesPathList = new ArrayList<>();
 
         final String modulePath = String.format(" ISDESCENDANTNODE ('/modules/%s/%s/templates/')",
                 moduleName, moduleVersion.replace(".SNAPSHOT", "-SNAPSHOT"));
@@ -237,11 +234,10 @@ public class ModulesMigrationHandler {
     /**
      * Collects actions from Package
      *
-     * @param aPackage
      * @return Modules list
      */
     private List<String> getModuleActions(JahiaTemplatesPackage aPackage) {
-        List<String> actionsList = new ArrayList<String>();
+        List<String> actionsList = new ArrayList<>();
 
         AbstractApplicationContext context = aPackage.getContext();
 
@@ -251,7 +247,7 @@ public class ModulesMigrationHandler {
 
             for (String beanName : beanNames) {
                 for (String actionName : this.actionsMap.keySet()) {
-                    if (beanName.toLowerCase().contains(actionName.toLowerCase()) && actionsList.contains(actionName) == false) {
+                    if (beanName.toLowerCase().contains(actionName.toLowerCase()) && !actionsList.contains(actionName)) {
                         actionsList.add(actionName);
                     }
                 }
@@ -298,7 +294,7 @@ public class ModulesMigrationHandler {
                         if (!document.hasRootElement()) return true;
                         final Element rootElement = document.getRootElement();
                         if (!StringUtils.equalsIgnoreCase(rootElement.getName(), "beans")) return true;
-                        return rootElement.getChildren().size() == 0;
+                        return rootElement.getChildren().isEmpty();
                     } catch (IOException | JDOMException e) {
                         logger.error("", e);
                         return false;
@@ -337,7 +333,7 @@ public class ModulesMigrationHandler {
             return;
         }
 
-        final boolean usesJahiaGroupID = moduleGroupId.equalsIgnoreCase("org.jahia.modules");
+        final boolean usesJahiaGroupID = moduleGroupId.equalsIgnoreCase(RESERVED_NAMESPACE);
         final boolean hasSpringBean = isSpringContext(aPackage);
         final List<String> nodeTypesWithcmContentTreeDisplayable = getNodeTypesWithMixin(moduleName, "jmix:cmContentTreeDisplayable");
         final Set<String> nodeTypesWithDate = getNodeTypesDateFormat(NodeTypeRegistry.getInstance().getNodeTypes(moduleName));
@@ -350,7 +346,7 @@ public class ModulesMigrationHandler {
         final List<String> emptySpringFiles = getEmptySpringFiles(aPackage);
 
         final ModuleReport moduleReport = new ModuleReport(moduleName, moduleVersion)
-                .trackData("org.jahia.modules", usesJahiaGroupID, DESC_GRP_ID_ERROR)
+                .trackData(RESERVED_NAMESPACE, usesJahiaGroupID, DESC_GRP_ID_ERROR)
                 .trackData("jmix:cmContentTreeDisplayable", nodeTypesWithcmContentTreeDisplayable, DESC_CM_CONTENT_TREE_DISPLAYABLE)
                 .trackData("Types with content template", contentTemplates, DESC_TYPES_WITH_CTNT_TPLT)
                 .trackData("serverSettings", serverSettingsPaths, DESC_HAS_SERVER_SETTINGS)
@@ -376,14 +372,14 @@ public class ModulesMigrationHandler {
      * @return true if OK; otherwise false
      */
     public Boolean execute(final EnvironmentInfo environmentInfo,
-                           RequestContext context) throws RepositoryException {
+                           RequestContext context) {
+        boolean removeStore = environmentInfo.isSrcRemoveStore();
+        boolean onlyStarted = environmentInfo.isSrcStartedOnly();
+        boolean addSystem = environmentInfo.isSrcAddSystemModules();
 
         logger.info("Starting modules report");
 
-        this.removeStore = environmentInfo.isSrcRemoveStore();
-        this.removeJahiaGit = environmentInfo.isSrcRemoveJahia();
-        this.onlyStarted = environmentInfo.isSrcStartedOnly();
-        this.addSystem = environmentInfo.isSrcAddSystemModules();
+        removeJahiaGit = environmentInfo.isSrcRemoveJahia();
 
         this.actionsMap = ServicesRegistry.getInstance().getJahiaTemplateManagerService().getActions();
         this.actionsMap.remove("default");
@@ -392,14 +388,14 @@ public class ModulesMigrationHandler {
         report.clear();
         jahiaStoreModules.clear();
 
-        if (removeStore == true) {
+        if (removeStore) {
             loadStoreJahiaModules(context.getExternalContext());
         }
 
         JahiaTemplateManagerService templateManager = ServicesRegistry.getInstance().getJahiaTemplateManagerService();
 
         List<JahiaTemplatesPackage> packagesList = (onlyStarted) ? templateManager.getAvailableTemplatePackages() :
-                new ArrayList<JahiaTemplatesPackage>(templateManager.getRegisteredBundles().values());
+                new ArrayList<>(templateManager.getRegisteredBundles().values());
 
         for (JahiaTemplatesPackage module : packagesList) {
             if (module.getModuleType().equals("module")
@@ -458,7 +454,8 @@ public class ModulesMigrationHandler {
         if (modulesList != null) {
             return modulesList;
         } else {
-            logger.error("Failed to load the modules list, from the store or from the local data");
+            logger.error("Failed to load the modules list from the store or from the local data in {}",
+                    MODULES_LIST_FILE_PATH);
             return null;
         }
     }
